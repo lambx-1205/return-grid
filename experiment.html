@@ -28,6 +28,7 @@
       <div id="game-arena" class="game-arena" role="application" aria-label="実験ステージ。23列11行のグリッドです。W、A、S、Dキーまたは矢印キーでプレイヤーを移動できます。斜め移動はなく、同時押しでは最後に押した方向が優先されます。" tabindex="0">
         <div class="arena-grid" aria-hidden="true"></div>
         <div class="arena-glow" aria-hidden="true"></div>
+        <div id="stage-blocks" class="stage-blocks" aria-hidden="true"></div>
 
         <div id="player" class="player" role="img" aria-label="プレイヤー。発光するスライム">
           <span class="player-trail" aria-hidden="true"></span>
@@ -41,6 +42,14 @@
             <span class="player-cheek player-cheek-right" aria-hidden="true"></span>
           </span>
         </div>
+
+        <div id="projectile" class="projectile" hidden aria-hidden="true">
+          <span class="projectile-rotor">
+            <span class="projectile-arm projectile-arm-left"></span>
+            <span class="projectile-arm projectile-arm-right"></span>
+            <span class="projectile-core"></span>
+          </span>
+        </div>
       </div>
 
       <div class="stage-controls">
@@ -52,7 +61,8 @@
           <span class="guide-text">MOVE</span>
           <span class="guide-divider"></span>
           <span class="keycap keycap-arrow">↑</span><span class="keycap keycap-arrow">←</span><span class="keycap keycap-arrow">↓</span><span class="keycap keycap-arrow">→</span>
-          <span class="guide-text guide-secondary">斜め移動なし · 同時押しは最後の方向を優先</span>
+          <span class="keycap keycap-space">SPACE</span>
+          <span class="guide-text guide-secondary">ブーメラン発射</span>
         </div>
         <div class="movement-readout">
           <span class="readout-label">MOTION</span>
