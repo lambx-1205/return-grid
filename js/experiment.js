@@ -17,8 +17,8 @@
     "arrowup", "arrowdown", "arrowleft", "arrowright"
   ]);
 
-  const GRID_COLUMNS = 24;
-  const GRID_ROWS = 12;
+  const GRID_COLUMNS = 23;
+  const GRID_ROWS = 11;
   const PLAYER_CELL_FRACTION = 1.0;
   const PLAYER_BASE_SIZE = 60;
   const playerRadius = { x: PLAYER_BASE_SIZE / 2, y: PLAYER_BASE_SIZE / 2 };
@@ -128,12 +128,11 @@
     window.requestAnimationFrame(frame);
   }
 
-  // Keep the mech at a consistent fraction of one grid cell.
+  // Fit the slime's bounding square to one cell, then spawn at the center
+  // of the bottom row (the middle column of this odd-width grid).
   fitPlayerToGrid();
-
-  // Start near the center; recalculate bounds when the window changes size.
   x = arena.clientWidth / 2;
-  y = arena.clientHeight / 2;
+  y = arena.clientHeight - arena.clientHeight / GRID_ROWS / 2;
   keepInsideArena();
   renderPlayer();
 
