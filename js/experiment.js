@@ -19,6 +19,7 @@
 
   const playerRadius = { x: player.offsetWidth / 2, y: player.offsetHeight / 2 };
   const speed = 300; // CSS pixels per second
+  const gridSkew = Math.tan(2.5 * Math.PI / 180); // Keep matched to the CSS grid.
   let x = 0;
   let y = 0;
   let previousTime = 0;
@@ -51,6 +52,9 @@
     if (!movementKeys.has(key)) return;
 
     event.preventDefault();
+
+    // The most recently pressed direction wins. Repeats do not change priority.
+    if (!event.repeat) keysDown.delete(key);
     keysDown.add(key);
   }
 
@@ -70,25 +74,42 @@
     let dx = 0;
     let dy = 0;
 
-    if (keysDown.has("a") || keysDown.has("arrowleft")) dx -= 1;
-    if (keysDown.has("d") || keysDown.has("arrowright")) dx += 1;
-    if (keysDown.has("w") || keysDown.has("arrowup")) dy -= 1;
-    if (keysDown.has("s") || keysDown.has("arrowdown")) dy += 1;
+    // Only one direction is active at a time; the latest key press takes priority.
+    const activeKey = Array.from(keysDown).pop();
+    switch (activeKey) {
+      case "a":
+      case "arrowleft":
+        dx = -1;
+        break;
+      case "d":
+      case "arrowright":
+        dx = 1;
+        break;
+      case "w":
+      case "arrowup":
+        dy = -1;
+        break;
+      case "s":
+      case "arrowdown":
+        dy = 1;
+        break;
+    }
 
     const moving = dx !== 0 || dy !== 0;
 
     if (moving) {
-      // Normalize diagonal movement so it is not faster than horizontal movement.
-      const magnitude = Math.hypot(dx, dy);
-      dx /= magnitude;
-      dy /= magnitude;
+      // Match the grid's 2.5-degree skew (see css/style.css).
+      const projectedX = dx + dy * gridSkew;
+      const magnitude = Math.hypot(projectedX, dy);
+      const moveX = projectedX / magnitude;
+      const moveY = dy / magnitude;
 
-      x += dx * speed * delta;
-      y += dy * speed * delta;
+      x += moveX * speed * delta;
+      y += moveY * speed * delta;
       keepInsideArena();
 
-      player.style.setProperty("--look-x", `${dx * 3}px`);
-      player.style.setProperty("--look-y", `${dy * 3}px`);
+      player.style.setProperty("--look-x", `${moveX * 3}px`);
+      player.style.setProperty("--look-y", `${moveY * 3}px`);
       player.classList.add("is-moving");
       movementStatus.textContent = "MOVING";
     } else {
