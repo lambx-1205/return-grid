@@ -31,7 +31,7 @@
     const cellWidth = arena.clientWidth / GRID_COLUMNS;
     const cellHeight = arena.clientHeight / GRID_ROWS;
     const desiredSize = Math.min(cellWidth, cellHeight) * PLAYER_CELL_FRACTION;
-    const scale = Math.max(0.3, Math.min(1, desiredSize / PLAYER_BASE_SIZE));
+    const scale = desiredSize / PLAYER_BASE_SIZE;
     player.style.setProperty("--player-scale", String(scale));
   }
 
