@@ -4,9 +4,11 @@
 (() => {
   const arena = document.querySelector("#game-arena");
   const player = document.querySelector("#player");
+  const stageBlocks = document.querySelector("#stage-blocks");
+  const projectileElement = document.querySelector("#projectile");
   const movementStatus = document.querySelector("#movement-status");
 
-  if (!arena || !player || !movementStatus) {
+  if (!arena || !player || !stageBlocks || !projectileElement || !movementStatus) {
     console.error("RETURN GRID: required movement-stage elements were not found.");
     return;
   }
@@ -22,10 +24,27 @@
   const PLAYER_CELL_FRACTION = 0.85;
   const PLAYER_BASE_SIZE = 60;
   const playerRadius = { x: PLAYER_BASE_SIZE / 2, y: PLAYER_BASE_SIZE / 2 };
-  const speed = 160; // CSS pixels per second; slower for one-screen stages.
+  const speed = 160; // CSS pixels per second.
+  const PROJECTILE_SIZE = 28;
+  const PROJECTILE_SPEED = 300;
+  const PROJECTILE_RETURN_SPEED = 340;
+  const PROJECTILE_MAX_CELLS = 5;
   let x = 0;
   let y = 0;
+  let facingX = 0;
+  let facingY = -1;
   let previousTime = 0;
+
+  const projectile = {
+    active: false,
+    mode: "outbound",
+    x: 0,
+    y: 0,
+    directionX: 0,
+    directionY: -1,
+    travelled: 0,
+    maxDistance: 0
+  };
 
   function fitPlayerToGrid() {
     const cellWidth = arena.clientWidth / GRID_COLUMNS;
@@ -41,11 +60,14 @@
     playerRadius.x = rect.width / 2;
     playerRadius.y = rect.height / 2;
 
+    const cellWidth = arena.clientWidth / GRID_COLUMNS;
+    const cellHeight = arena.clientHeight / GRID_ROWS;
+    // Keep the player inside the walkable cells, not inside the hard-block ring.
     return {
-      minX: playerRadius.x,
-      maxX: Math.max(playerRadius.x, arena.clientWidth - playerRadius.x),
-      minY: playerRadius.y,
-      maxY: Math.max(playerRadius.y, arena.clientHeight - playerRadius.y)
+      minX: cellWidth + playerRadius.x,
+      maxX: Math.max(cellWidth + playerRadius.x, arena.clientWidth - cellWidth - playerRadius.x),
+      minY: cellHeight + playerRadius.y,
+      maxY: Math.max(cellHeight + playerRadius.y, arena.clientHeight - cellHeight - playerRadius.y)
     };
   }
 
@@ -60,7 +82,88 @@
     player.style.top = `${y}px`;
   }
 
+  function buildHardBlocks() {
+    const fragment = document.createDocumentFragment();
+    for (let row = 0; row < GRID_ROWS; row += 1) {
+      for (let col = 0; col < GRID_COLUMNS; col += 1) {
+        const isBorder = row === 0 || row === GRID_ROWS - 1 || col === 0 || col === GRID_COLUMNS - 1;
+        if (!isBorder) continue;
+        const block = document.createElement("div");
+        const variant = (row * 7 + col * 3 + row * col) % 4;
+        block.className = "hard-block hard-block--" + variant;
+        block.style.gridColumn = String(col + 1);
+        block.style.gridRow = String(row + 1);
+        fragment.appendChild(block);
+      }
+    }
+    stageBlocks.replaceChildren(fragment);
+  }
+
+  function renderProjectile() {
+    projectileElement.hidden = !projectile.active;
+    if (!projectile.active) return;
+    projectileElement.style.left = `${projectile.x}px`;
+    projectileElement.style.top = `${projectile.y}px`;
+  }
+
+  function launchProjectile() {
+    if (projectile.active) return;
+    projectile.active = true;
+    projectile.mode = "outbound";
+    projectile.x = x;
+    projectile.y = y;
+    projectile.directionX = facingX;
+    projectile.directionY = facingY;
+    projectile.travelled = 0;
+
+    const cellWidth = arena.clientWidth / GRID_COLUMNS;
+    const cellHeight = arena.clientHeight / GRID_ROWS;
+    const cellSize = Math.min(cellWidth, cellHeight);
+    const safeMinX = cellWidth + PROJECTILE_SIZE / 2 + 1;
+    const safeMaxX = arena.clientWidth - cellWidth - PROJECTILE_SIZE / 2 - 1;
+    const safeMinY = cellHeight + PROJECTILE_SIZE / 2 + 1;
+    const safeMaxY = arena.clientHeight - cellHeight - PROJECTILE_SIZE / 2 - 1;
+    let availableDistance = 0;
+    if (facingX < 0) availableDistance = projectile.x - safeMinX;
+    else if (facingX > 0) availableDistance = safeMaxX - projectile.x;
+    else if (facingY < 0) availableDistance = projectile.y - safeMinY;
+    else availableDistance = safeMaxY - projectile.y;
+    projectile.maxDistance = Math.max(0, Math.min(cellSize * PROJECTILE_MAX_CELLS, availableDistance - 1));
+    renderProjectile();
+  }
+
+  function updateProjectile(delta) {
+    if (!projectile.active) return;
+    if (projectile.mode === "outbound") {
+      const remaining = projectile.maxDistance - projectile.travelled;
+      const step = Math.min(PROJECTILE_SPEED * delta, Math.max(0, remaining));
+      projectile.x += projectile.directionX * step;
+      projectile.y += projectile.directionY * step;
+      projectile.travelled += step;
+      if (projectile.travelled >= projectile.maxDistance) projectile.mode = "return";
+    } else {
+      // Home toward the player current position; the walkable rectangle contains this path.
+      const toPlayerX = x - projectile.x;
+      const toPlayerY = y - projectile.y;
+      const distance = Math.hypot(toPlayerX, toPlayerY);
+      const step = PROJECTILE_RETURN_SPEED * delta;
+      if (distance <= Math.max(step, PROJECTILE_SIZE * 0.55)) {
+        projectile.active = false;
+      } else {
+        projectile.x += (toPlayerX / distance) * step;
+        projectile.y += (toPlayerY / distance) * step;
+      }
+    }
+    renderProjectile();
+  }
+
   function onKeyDown(event) {
+    if (event.code === "Space" || event.key === " ") {
+      event.preventDefault();
+      if (!event.repeat) launchProjectile();
+      return;
+    }
+
     const key = event.key.toLowerCase();
     if (!movementKeys.has(key)) return;
 
@@ -113,6 +216,8 @@
     if (moving) {
       // The 23 x 11 board uses a straight coordinate grid.
       // One axis moves at a time, so a side wall cannot block vertical travel.
+      facingX = dx;
+      facingY = dy;
       x += dx * speed * delta;
       y += dy * speed * delta;
       keepInsideArena();
@@ -132,17 +237,21 @@
       movementStatus.textContent = "STANDBY";
     }
 
+    updateProjectile(delta);
     renderPlayer();
     window.requestAnimationFrame(frame);
   }
 
-  // Fit the slime's bounding square to one cell, then spawn at the center
-  // of the bottom row (the middle column of this odd-width grid).
+  buildHardBlocks();
   fitPlayerToGrid();
+
+  // Start at the center of the bottom walkable row, above the hard-block border.
+  const cellHeight = arena.clientHeight / GRID_ROWS;
   x = arena.clientWidth / 2;
-  y = arena.clientHeight - arena.clientHeight / GRID_ROWS / 2;
+  y = arena.clientHeight - cellHeight * 1.5;
   keepInsideArena();
   renderPlayer();
+  renderProjectile();
 
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
