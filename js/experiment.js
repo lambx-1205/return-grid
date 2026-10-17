@@ -17,9 +17,9 @@
     "arrowup", "arrowdown", "arrowleft", "arrowright"
   ]);
 
-  const GRID_COLUMNS = 20;
-  const GRID_ROWS = 10;
-  const PLAYER_CELL_FRACTION = 0.72;
+  const GRID_COLUMNS = 24;
+  const GRID_ROWS = 12;
+  const PLAYER_CELL_FRACTION = 1.0;
   const PLAYER_BASE_SIZE = 60;
   const playerRadius = { x: PLAYER_BASE_SIZE / 2, y: PLAYER_BASE_SIZE / 2 };
   const speed = 160; // CSS pixels per second; slower for one-screen stages.
