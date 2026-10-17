@@ -19,7 +19,7 @@
 
   const GRID_COLUMNS = 23;
   const GRID_ROWS = 11;
-  const PLAYER_CELL_FRACTION = 1.0;
+  const PLAYER_CELL_FRACTION = 0.85;
   const PLAYER_BASE_SIZE = 60;
   const playerRadius = { x: PLAYER_BASE_SIZE / 2, y: PLAYER_BASE_SIZE / 2 };
   const speed = 160; // CSS pixels per second; slower for one-screen stages.
