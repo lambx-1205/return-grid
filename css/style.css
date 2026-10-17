@@ -41,7 +41,7 @@ button { font: inherit; }
   background-image:
     linear-gradient(rgba(76, 140, 255, .12) 1px, transparent 1px),
     linear-gradient(90deg, rgba(76, 140, 255, .12) 1px, transparent 1px);
-  background-size: 100% 9.090909%, 4.347826% 100%;
+  background-size: 48px 48px;
   mask-image: linear-gradient(to bottom, black, transparent 92%);
 }
 
@@ -316,6 +316,7 @@ h1 span {
 @media (prefers-reduced-motion: reduce) {
   .player.is-moving .player-body { animation: none; }
   .player-trail { transition: none; }
+  .projectile-rotor { animation-duration: 1.5s; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
 
@@ -564,6 +565,119 @@ h1 span {
   to { transform: rotate(var(--slime-lean, 0deg)) scaleX(1.06) scaleY(.94); }
 }
 
+.stage-blocks {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(23, minmax(0, 1fr));
+  grid-template-rows: repeat(11, minmax(0, 1fr));
+  pointer-events: none;
+}
+
+.hard-block {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  margin: 1px;
+  overflow: hidden;
+  border: 1px solid rgba(127, 195, 227, .52);
+  border-radius: 3px;
+  background:
+    linear-gradient(145deg, rgba(220, 250, 255, .18), transparent 38%),
+    linear-gradient(135deg, #36516a 0%, #14283e 43%, #243d56 70%, #0b1b2e 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.13),
+    inset 0 -2px 0 rgba(0,0,0,.48),
+    0 0 5px rgba(29, 92, 127, .12);
+}
+
+.hard-block::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border: 1px solid rgba(140, 194, 220, .15);
+  border-radius: 2px;
+  background:
+    linear-gradient(135deg, rgba(195, 236, 255, .11), transparent 35% 65%, rgba(0,0,0,.15)),
+    repeating-linear-gradient(115deg, transparent 0 8px, rgba(195, 234, 255, .035) 9px 10px);
+}
+
+.hard-block::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 3px 3px, rgba(190, 235, 255, .75) 0 1.2px, transparent 1.7px),
+    radial-gradient(circle at calc(100% - 3px) 3px, rgba(190, 235, 255, .38) 0 1.2px, transparent 1.7px),
+    radial-gradient(circle at 3px calc(100% - 3px), rgba(190, 235, 255, .38) 0 1.2px, transparent 1.7px);
+}
+
+.hard-block--1 {
+  background:
+    linear-gradient(25deg, rgba(2, 14, 28, .45), transparent 56%),
+    linear-gradient(135deg, #486073 0%, #1a3044 48%, #304b62 76%, #0b1a2b 100%);
+}
+.hard-block--2 {
+  background:
+    linear-gradient(155deg, rgba(129, 216, 244, .12), transparent 45%),
+    linear-gradient(125deg, #243d56 0%, #102337 50%, #354d63 100%);
+}
+.hard-block--3 {
+  background:
+    linear-gradient(80deg, rgba(1, 11, 24, .26), transparent 32% 70%, rgba(117, 193, 224, .12)),
+    linear-gradient(140deg, #3a4b60 0%, #17273a 53%, #263f57 100%);
+}
+
+.projectile {
+  position: absolute;
+  z-index: 4;
+  left: 0;
+  top: 0;
+  width: 30px;
+  height: 30px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  filter: drop-shadow(0 0 7px rgba(66, 245, 233, .7));
+}
+.projectile[hidden] { display: none !important; }
+
+.projectile-rotor {
+  position: absolute;
+  inset: 0;
+  animation: boomerang-spin 360ms linear infinite;
+}
+
+.projectile-arm {
+  position: absolute;
+  top: 2px;
+  width: 8px;
+  height: 26px;
+  border: 1px solid rgba(212, 255, 255, .94);
+  border-radius: 5px 5px 2px 2px;
+  background: linear-gradient(90deg, #2877b8 0%, #a7fff6 40%, #42eadf 68%, #2366d9 100%);
+  box-shadow: inset 0 0 4px rgba(255,255,255,.62), 0 0 5px rgba(66,245,233,.42);
+}
+.projectile-arm-left { left: 5px; transform: rotate(-34deg); }
+.projectile-arm-right { right: 5px; transform: rotate(34deg); }
+
+.projectile-core {
+  position: absolute;
+  left: 50%;
+  top: 12px;
+  width: 6px;
+  height: 6px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 6px #fff, 0 0 12px var(--pink);
+}
+
+@keyframes boomerang-spin {
+  to { transform: rotate(360deg); }
+}
+
 .stage-controls {
   min-height: 48px;
   display: flex;
@@ -597,6 +711,7 @@ h1 span {
   font-weight: 850;
 }
 .keycap-arrow { min-width: 22px; }
+.keycap-space { min-width: 56px; letter-spacing: .05em; }
 .guide-text {
   margin-left: 4px;
   color: var(--cyan);
