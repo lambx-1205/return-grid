@@ -18,8 +18,15 @@
   ]);
 
   const playerRadius = { x: player.offsetWidth / 2, y: player.offsetHeight / 2 };
-  const speed = 300; // CSS pixels per second
-  const gridSkew = Math.tan(2.5 * Math.PI / 180); // Keep matched to the CSS grid.
+  const speed = 160; // CSS pixels per second; slower for one-screen stages.
+  let gridSkew = 0;
+
+  function readGridSkew() {
+    const degrees = Number.parseFloat(
+      window.getComputedStyle(arena).getPropertyValue("--grid-skew")
+    );
+    gridSkew = Math.tan((Number.isFinite(degrees) ? degrees : 0) * Math.PI / 180);
+  }
   let x = 0;
   let y = 0;
   let previousTime = 0;
@@ -98,14 +105,34 @@
     const moving = dx !== 0 || dy !== 0;
 
     if (moving) {
-      // Match the grid's 2.5-degree skew (see css/style.css).
+      // Match the CSS grid's shared skew angle.
       const projectedX = dx + dy * gridSkew;
       const magnitude = Math.hypot(projectedX, dy);
       const moveX = projectedX / magnitude;
       const moveY = dy / magnitude;
 
-      x += moveX * speed * delta;
-      y += moveY * speed * delta;
+      // Move along the full vector until the first arena boundary is reached.
+      // Do not clamp only Y: that would leave the skew's horizontal component
+      // active and make the player drift sideways while held against an edge.
+      const limit = bounds();
+      const stepX = moveX * speed * delta;
+      const stepY = moveY * speed * delta;
+      let travel = 1;
+
+      if (stepX < 0 && x + stepX < limit.minX) {
+        travel = Math.min(travel, (limit.minX - x) / stepX);
+      } else if (stepX > 0 && x + stepX > limit.maxX) {
+        travel = Math.min(travel, (limit.maxX - x) / stepX);
+      }
+
+      if (stepY < 0 && y + stepY < limit.minY) {
+        travel = Math.min(travel, (limit.minY - y) / stepY);
+      } else if (stepY > 0 && y + stepY > limit.maxY) {
+        travel = Math.min(travel, (limit.maxY - y) / stepY);
+      }
+
+      x += stepX * travel;
+      y += stepY * travel;
       keepInsideArena();
 
       player.style.setProperty("--look-x", `${moveX * 3}px`);
@@ -121,6 +148,9 @@
     window.requestAnimationFrame(frame);
   }
 
+  // Read the CSS skew once at startup and again after viewport changes.
+  readGridSkew();
+
   // Start near the center; recalculate bounds when the window changes size.
   x = arena.clientWidth / 2;
   y = arena.clientHeight / 2;
@@ -131,6 +161,7 @@
   window.addEventListener("keyup", onKeyUp);
   window.addEventListener("blur", clearKeys);
   window.addEventListener("resize", () => {
+    readGridSkew();
     keepInsideArena();
     renderPlayer();
   });
