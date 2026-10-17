@@ -368,7 +368,7 @@ h1 span {
   isolation: isolate;
   flex: 1 0 auto;
   width: 100%;
-  min-height: clamp(360px, calc(100dvh - 255px), 1000px);
+  min-height: clamp(360px, calc(100dvh - 300px), 1000px);
   border: 1px solid rgba(66, 245, 233, .57);
   border-radius: 10px;
   overflow: hidden;
@@ -621,7 +621,7 @@ h1 span {
 @media (max-width: 800px) {
   .experiment-screen { width: min(calc(100% - 24px), 1600px); }
   .experiment-content { gap: 10px; padding: 10px 0 12px; }
-  .game-arena { min-height: clamp(360px, calc(100dvh - 250px), 800px); }
+  .game-arena { min-height: clamp(360px, calc(100dvh - 325px), 800px); }
   .stage-controls { flex-wrap: wrap; justify-content: space-between; }
   .guide-secondary { width: 100%; margin: 5px 0 0 2px; }
   .guide-divider, .keycap-arrow { display: none; }
@@ -632,7 +632,7 @@ h1 span {
   .stage-heading .eyebrow { font-size: .58rem; letter-spacing: .12em; }
   .stage-heading h1 { font-size: 1.7rem; }
   .stage-badge { padding: 7px 8px; font-size: .56rem; }
-  .game-arena { min-height: clamp(350px, calc(100dvh - 250px), 700px); }
+  .game-arena { min-height: clamp(350px, calc(100dvh - 305px), 700px); }
   .arena-grid { background-size: 32px 32px; }
   .movement-guide { max-width: 72%; }
   .movement-readout { min-width: 60px; }
