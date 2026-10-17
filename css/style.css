@@ -41,7 +41,7 @@ button { font: inherit; }
   background-image:
     linear-gradient(rgba(76, 140, 255, .12) 1px, transparent 1px),
     linear-gradient(90deg, rgba(76, 140, 255, .12) 1px, transparent 1px);
-  background-size: 48px 48px;
+  background-size: 100% 10%, 5% 100%;
   mask-image: linear-gradient(to bottom, black, transparent 92%);
 }
 
@@ -247,8 +247,8 @@ h1 span {
   background-image:
     linear-gradient(rgba(66, 245, 233, .12) 1px, transparent 1px),
     linear-gradient(90deg, rgba(66, 245, 233, .12) 1px, transparent 1px);
-  background-size: 30px 30px;
-  transform: skewX(var(--grid-skew)) scale(1.08);
+  background-size: 100% 10%, 5% 100%;
+  transform: none;
 }
 .arena-center {
   position: absolute;
@@ -364,12 +364,14 @@ h1 span {
 }
 
 .game-arena {
-  --grid-skew: 2.5deg;
   position: relative;
   isolation: isolate;
-  flex: 1 0 auto;
-  width: 100%;
-  min-height: clamp(360px, calc(100dvh - 300px), 1000px);
+  flex: 0 0 auto;
+  width: min(100%, calc(200dvh - 600px));
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 2 / 1;
+  margin-inline: auto;
   border: 1px solid rgba(66, 245, 233, .57);
   border-radius: 10px;
   overflow: hidden;
@@ -395,8 +397,9 @@ h1 span {
   background-image:
     linear-gradient(rgba(66, 245, 233, .105) 1px, transparent 1px),
     linear-gradient(90deg, rgba(66, 245, 233, .105) 1px, transparent 1px);
-  background-size: 42px 42px;
-  background-position: center center;
+  background-size: 100% 10%, 5% 100%;
+  background-position: left top;
+  transform: none;
 }
 
 .arena-glow {
@@ -416,7 +419,7 @@ h1 span {
   pointer-events: none;
 }
 .axis-x { width: 100%; height: 1px; top: 50%; background: linear-gradient(90deg, transparent, var(--pink), transparent); }
-.axis-y { height: 100%; width: 1px; left: 50%; background: linear-gradient(180deg, transparent, var(--cyan), transparent); transform: skewX(var(--grid-skew)); }
+.axis-y { height: 100%; width: 1px; left: 50%; background: linear-gradient(180deg, transparent, var(--cyan), transparent); transform: none; }
 
 .arena-label {
   position: absolute;
@@ -439,107 +442,140 @@ h1 span {
   pointer-events: none;
 }
 
+
 .player {
-  --look-x: 0px;
-  --look-y: 0px;
   position: absolute;
   z-index: 2;
   left: 50%;
   top: 50%;
-  width: 58px;
-  height: 56px;
+  width: 60px;
+  height: 60px;
   transform: translate(-50%, -50%);
   pointer-events: none;
-  filter: drop-shadow(0 0 10px rgba(66, 245, 233, .38));
+  filter: drop-shadow(0 0 10px rgba(66, 245, 233, .34));
   will-change: left, top;
 }
 
 .player-body {
   position: absolute;
-  inset: 2px 2px 8px;
+  inset: 7px 6px 10px;
   display: block;
-  border: 1px solid rgba(190, 255, 250, .9);
-  border-radius: 48% 52% 43% 57% / 52% 43% 57% 48%;
-  background: linear-gradient(145deg, #a0fff5 0%, #43f4e4 43%, #32a9ee 78%, #4778ff 100%);
+  border: 1px solid rgba(190, 255, 250, .92);
+  border-radius: 34% 34% 38% 38% / 30% 30% 38% 38%;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.22), transparent 28%),
+    linear-gradient(145deg, #8df9f1 0%, #3ebccf 38%, #1e648f 72%, #192f67 100%);
   box-shadow:
-    inset -7px -8px 0 rgba(33, 85, 210, .24),
-    inset 4px 4px 0 rgba(255, 255, 255, .24),
-    0 0 18px rgba(66, 245, 233, .48);
-  transform: rotate(-2deg);
+    inset 0 0 0 3px rgba(5, 31, 61, .42),
+    inset 0 4px 5px rgba(255,255,255,.28),
+    0 0 15px rgba(66, 245, 233, .35);
 }
 
 .player-body::before {
   content: "";
   position: absolute;
-  width: 15px;
-  height: 11px;
-  right: 1px;
   top: -5px;
-  border-radius: 60% 40% 60% 40%;
+  left: 50%;
+  width: 10px;
+  height: 7px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(255, 197, 245, .9);
+  border-radius: 3px 3px 1px 1px;
   background: var(--pink);
-  box-shadow: 0 0 12px rgba(255, 79, 216, .9);
-  transform: rotate(18deg);
+  box-shadow: 0 0 10px rgba(255, 79, 216, .65);
 }
 
-.player-eye {
+.player-antenna {
   position: absolute;
-  top: 20px;
-  width: 6px;
+  top: 5px;
+  left: 50%;
+  width: 19px;
+  height: 3px;
+  transform: translateX(-50%);
+  border-radius: 2px;
+  background: rgba(6, 40, 70, .8);
+  box-shadow: 0 1px 0 rgba(208,255,255,.7);
+}
+
+.player-visor {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 28px;
   height: 10px;
-  border-radius: 50%;
-  background: #07172b;
-  box-shadow: 0 0 2px rgba(255,255,255,.4);
-  transition: transform .08s linear;
-  transform: translate(var(--look-x), var(--look-y));
+  transform: translateX(-50%);
+  border: 1px solid rgba(153, 255, 250, .66);
+  border-radius: 4px;
+  background: linear-gradient(180deg, #06172e, #0b304e);
+  box-shadow: inset 0 0 5px rgba(66, 245, 233, .18);
 }
-.player-eye-left { left: 18px; }
-.player-eye-right { right: 17px; }
 
-.player-cheek {
-  position: absolute;
-  top: 31px;
-  width: 8px;
+.player-led {
+  width: 3px;
   height: 4px;
-  border-radius: 50%;
-  background: #ff91df;
-  box-shadow: 0 0 6px rgba(255, 79, 216, .48);
+  border-radius: 1px;
+  background: var(--cyan);
+  box-shadow: 0 0 5px rgba(66, 245, 233, .9);
 }
-.player-cheek-left { left: 9px; }
-.player-cheek-right { right: 8px; }
+.player-led:nth-child(2) {
+  background: #e6ffff;
+  box-shadow: 0 0 5px rgba(230, 255, 255, .9);
+}
 
 .player-core {
   position: absolute;
-  width: 7px;
-  height: 7px;
   left: 50%;
-  top: 8px;
-  border-radius: 50%;
-  background: #f5ffff;
-  box-shadow: 0 0 7px #fff, 0 0 14px var(--cyan);
+  top: 29px;
+  width: 8px;
+  height: 8px;
   transform: translateX(-50%);
-}
-.player-spark {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  left: 5px;
-  top: 7px;
+  border: 1px solid rgba(220,255,255,.9);
   border-radius: 50%;
-  background: #fff;
-  opacity: .8;
+  background: radial-gradient(circle at 35% 30%, #ffffff 0 12%, var(--cyan) 38%, #1681ad 75%);
+  box-shadow: 0 0 6px #fff, 0 0 12px rgba(66, 245, 233, .9);
 }
+
+.player-side-port {
+  position: absolute;
+  top: 22px;
+  width: 5px;
+  height: 10px;
+  border: 1px solid rgba(120, 238, 255, .75);
+  border-radius: 2px;
+  background: linear-gradient(180deg, #16496d, #07172b);
+  box-shadow: 0 0 5px rgba(66, 245, 233, .24);
+}
+.player-side-port-left { left: -3px; }
+.player-side-port-right { right: -3px; }
+
+.player-panel {
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  width: 17px;
+  height: 3px;
+  transform: translateX(-50%);
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--cyan) 0 30%, #d5ffff 50%, var(--pink) 100%);
+  box-shadow: 0 0 5px rgba(66, 245, 233, .34);
+}
+
 .player-shadow {
   position: absolute;
   left: 14px;
-  right: 12px;
+  right: 14px;
   bottom: 1px;
-  height: 8px;
+  height: 7px;
   border-radius: 50%;
   background: rgba(0, 0, 0, .44);
   filter: blur(3px);
 }
 .player.is-moving .player-body {
-  filter: saturate(1.16) brightness(1.06);
+  filter: saturate(1.13) brightness(1.05);
 }
 
 .stage-controls {
@@ -611,13 +647,13 @@ h1 span {
 
 @media (min-width: 1500px) {
   .experiment-screen { width: min(calc(100% - 48px), 1800px); }
-  .arena-grid { background-size: 48px 48px; }
+  .arena-grid { background-size: 100% 10%, 5% 100%; }
 }
 
 @media (max-width: 800px) {
   .experiment-screen { width: min(calc(100% - 24px), 1600px); }
   .experiment-content { gap: 10px; padding: 10px 0 12px; }
-  .game-arena { min-height: clamp(360px, calc(100dvh - 325px), 800px); }
+  .game-arena { width: 100%; min-height: 0; aspect-ratio: 2 / 1; }
   .stage-controls { flex-wrap: wrap; justify-content: space-between; }
   .guide-secondary { width: 100%; margin: 5px 0 0 2px; }
   .guide-divider, .keycap-arrow { display: none; }
@@ -628,14 +664,11 @@ h1 span {
   .stage-heading .eyebrow { font-size: .58rem; letter-spacing: .12em; }
   .stage-heading h1 { font-size: 1.7rem; }
   .stage-badge { padding: 7px 8px; font-size: .56rem; }
-  .game-arena { min-height: clamp(350px, calc(100dvh - 305px), 700px); }
-  .arena-grid { background-size: 32px 32px; }
+  .game-arena { width: 100%; min-height: 0; aspect-ratio: 2 / 1; }
+  .arena-grid { background-size: 100% 10%, 5% 100%; }
   .movement-guide { max-width: 72%; }
   .movement-readout { min-width: 60px; }
   .stage-back-button { font-size: .75rem; padding: 9px 10px; }
   .arena-label { font-size: .5rem; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .player-body { animation: none; }
-}
