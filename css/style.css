@@ -465,7 +465,7 @@ h1 span {
     inset -7px -8px 0 rgba(33, 85, 210, .24),
     inset 4px 4px 0 rgba(255, 255, 255, .24),
     0 0 18px rgba(66, 245, 233, .48);
-  animation: player-float 2s ease-in-out infinite;
+  transform: rotate(-2deg);
 }
 
 .player-body::before {
@@ -608,11 +608,6 @@ h1 span {
   letter-spacing: .12em;
 }
 .stage-back-button { flex-shrink: 0; padding: 10px 13px; }
-
-@keyframes player-float {
-  0%, 100% { transform: translateY(0) rotate(-3deg); }
-  50% { transform: translateY(-3px) rotate(3deg); }
-}
 
 @media (min-width: 1500px) {
   .experiment-screen { width: min(calc(100% - 48px), 1800px); }
