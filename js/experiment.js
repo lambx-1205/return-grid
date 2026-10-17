@@ -17,15 +17,29 @@
     "arrowup", "arrowdown", "arrowleft", "arrowright"
   ]);
 
-  const playerRadius = { x: player.offsetWidth / 2, y: player.offsetHeight / 2 };
+  const GRID_COLUMNS = 20;
+  const GRID_ROWS = 10;
+  const PLAYER_CELL_FRACTION = 0.72;
+  const PLAYER_BASE_SIZE = 60;
+  const playerRadius = { x: PLAYER_BASE_SIZE / 2, y: PLAYER_BASE_SIZE / 2 };
   const speed = 160; // CSS pixels per second; slower for one-screen stages.
   let x = 0;
   let y = 0;
   let previousTime = 0;
 
+  function fitPlayerToGrid() {
+    const cellWidth = arena.clientWidth / GRID_COLUMNS;
+    const cellHeight = arena.clientHeight / GRID_ROWS;
+    const desiredSize = Math.min(cellWidth, cellHeight) * PLAYER_CELL_FRACTION;
+    const scale = Math.max(0.3, Math.min(1, desiredSize / PLAYER_BASE_SIZE));
+    player.style.setProperty("--player-scale", String(scale));
+  }
+
   function bounds() {
-    playerRadius.x = player.offsetWidth / 2;
-    playerRadius.y = player.offsetHeight / 2;
+    // Use the visual, scaled size rather than the unscaled CSS box.
+    const rect = player.getBoundingClientRect();
+    playerRadius.x = rect.width / 2;
+    playerRadius.y = rect.height / 2;
 
     return {
       minX: playerRadius.x,
@@ -114,6 +128,9 @@
     window.requestAnimationFrame(frame);
   }
 
+  // Keep the mech at a consistent fraction of one grid cell.
+  fitPlayerToGrid();
+
   // Start near the center; recalculate bounds when the window changes size.
   x = arena.clientWidth / 2;
   y = arena.clientHeight / 2;
@@ -124,6 +141,7 @@
   window.addEventListener("keyup", onKeyUp);
   window.addEventListener("blur", clearKeys);
   window.addEventListener("resize", () => {
+    fitPlayerToGrid();
     keepInsideArena();
     renderPlayer();
   });
