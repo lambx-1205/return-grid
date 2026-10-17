@@ -4,42 +4,71 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#080b18">
-  <title>RETURN GRID | Experiment Stage</title>
+  <title>RETURN GRID | Movement Test</title>
   <link rel="stylesheet" href="css/style.css">
+  <script src="js/experiment.js" defer></script>
 </head>
 <body class="page page-experiment">
   <div class="scanlines" aria-hidden="true"></div>
   <main class="screen experiment-screen">
     <header class="topbar">
       <a class="wordmark" href="main.html" aria-label="メインメニューへ戻る">RG<span>／</span>SYS</a>
-      <div class="system-label"><span class="status-dot"></span> TEST AREA 00</div>
+      <div class="system-label"><span class="status-dot"></span> MOVEMENT LAB / 00</div>
     </header>
 
-    <section class="experiment-content">
-      <div class="eyebrow"><span class="eyebrow-line"></span> EXPERIMENT / STAGE 00</div>
-      <h1>TEST <span>AREA</span></h1>
-      <p class="subtitle">SYSTEMS UNDER CONSTRUCTION</p>
-
-      <div class="arena-frame" aria-label="実験ステージの仮画面">
-        <div class="arena-grid"></div>
-        <div class="arena-center">
-          <div class="loading-ring" aria-hidden="true"></div>
-          <span class="arena-code">LAB-00</span>
-          <strong>実験ステージ準備中</strong>
-          <p>ここにプレイヤー・ブーメラン・敵を実装していきます。</p>
+    <section class="experiment-content" aria-labelledby="stage-title">
+      <div class="stage-heading">
+        <div>
+          <div class="eyebrow"><span class="eyebrow-line"></span> EXPERIMENT / STAGE 00</div>
+          <h1 id="stage-title">TEST <span>AREA</span></h1>
         </div>
-        <span class="corner corner-tl"></span>
-        <span class="corner corner-tr"></span>
-        <span class="corner corner-bl"></span>
-        <span class="corner corner-br"></span>
+        <div class="stage-badge"><span class="status-dot"></span> FREE MOVE</div>
       </div>
 
-      <a class="secondary-button" href="main.html"><span aria-hidden="true">←</span> メインメニューへ戻る</a>
+      <div id="game-arena" class="game-arena" role="application" aria-label="実験ステージ。W、A、S、Dキーまたは矢印キーでプレイヤーを移動できます。" tabindex="0">
+        <div class="arena-grid" aria-hidden="true"></div>
+        <div class="arena-glow" aria-hidden="true"></div>
+        <div class="arena-axis axis-x" aria-hidden="true"></div>
+        <div class="arena-axis axis-y" aria-hidden="true"></div>
+        <div class="arena-label arena-label-top">RG / LAB-00</div>
+        <div class="arena-label arena-label-bottom">COORDINATE SPACE · 2D</div>
+        <div class="arena-center-mark" aria-hidden="true">+</div>
+
+        <div id="player" class="player" role="img" aria-label="プレイヤー">
+          <span class="player-body">
+            <span class="player-eye player-eye-left"></span>
+            <span class="player-eye player-eye-right"></span>
+            <span class="player-cheek player-cheek-left"></span>
+            <span class="player-cheek player-cheek-right"></span>
+            <span class="player-core"></span>
+            <span class="player-spark"></span>
+          </span>
+          <span class="player-shadow" aria-hidden="true"></span>
+        </div>
+      </div>
+
+      <div class="stage-controls">
+        <div class="movement-guide">
+          <span class="keycap">W</span>
+          <span class="key-row">
+            <span class="keycap">A</span><span class="keycap">S</span><span class="keycap">D</span>
+          </span>
+          <span class="guide-text">MOVE</span>
+          <span class="guide-divider"></span>
+          <span class="keycap keycap-arrow">↑</span><span class="keycap keycap-arrow">←</span><span class="keycap keycap-arrow">↓</span><span class="keycap keycap-arrow">→</span>
+          <span class="guide-text guide-secondary">矢印キーも使用できます</span>
+        </div>
+        <div class="movement-readout">
+          <span class="readout-label">MOTION</span>
+          <strong id="movement-status" aria-live="polite">STANDBY</strong>
+        </div>
+        <a class="secondary-button stage-back-button" href="main.html"><span aria-hidden="true">←</span> メニュー</a>
+      </div>
     </section>
 
     <footer class="footer">
-      <span>RETURN GRID <span class="muted">/ EXPERIMENT</span></span>
-      <span class="build-label"><span class="status-dot"></span> NAVIGATION OK</span>
+      <span>RETURN GRID <span class="muted">/ MOVEMENT TEST</span></span>
+      <span class="build-label"><span class="status-dot"></span> INPUT READY</span>
     </footer>
   </main>
 </body>

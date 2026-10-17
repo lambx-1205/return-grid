@@ -316,3 +316,330 @@ h1 span {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
+
+
+/* Experiment stage: large arena and smooth top-down player movement. */
+.experiment-screen {
+  width: min(calc(100% - 32px), 1600px);
+  min-height: 100vh;
+}
+
+.experiment-content {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 13px 0 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  text-align: left;
+}
+
+.stage-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.stage-heading .eyebrow { justify-content: flex-start; }
+.stage-heading h1 {
+  margin-top: 7px;
+  font-size: clamp(1.65rem, 3.2vw, 2.8rem);
+  letter-spacing: -.045em;
+}
+
+.stage-badge {
+  flex-shrink: 0;
+  padding: 9px 12px;
+  border: 1px solid rgba(66, 245, 233, .28);
+  border-radius: 6px;
+  color: var(--cyan);
+  background: rgba(66, 245, 233, .055);
+  font-size: .67rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.game-arena {
+  position: relative;
+  isolation: isolate;
+  flex: 1 0 auto;
+  width: 100%;
+  min-height: clamp(360px, calc(100dvh - 255px), 1000px);
+  border: 1px solid rgba(66, 245, 233, .57);
+  border-radius: 10px;
+  overflow: hidden;
+  outline: none;
+  background:
+    radial-gradient(ellipse at 50% 48%, rgba(24, 76, 128, .19), transparent 62%),
+    linear-gradient(145deg, rgba(6, 13, 31, .96), rgba(8, 11, 28, .97));
+  box-shadow:
+    0 0 26px rgba(66, 245, 233, .09),
+    inset 0 0 40px rgba(77, 141, 255, .055);
+}
+
+.game-arena:focus-visible {
+  outline: 2px solid var(--pink);
+  outline-offset: 3px;
+}
+
+.arena-grid {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  opacity: .68;
+  background-image:
+    linear-gradient(rgba(66, 245, 233, .105) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(66, 245, 233, .105) 1px, transparent 1px);
+  background-size: 42px 42px;
+  background-position: center center;
+}
+
+.arena-glow {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at center, rgba(66, 245, 233, .07), transparent 28%),
+    linear-gradient(90deg, rgba(255, 79, 216, .025), transparent 20% 80%, rgba(77, 141, 255, .035));
+}
+
+.arena-axis {
+  position: absolute;
+  z-index: -1;
+  opacity: .28;
+  pointer-events: none;
+}
+.axis-x { width: 100%; height: 1px; top: 50%; background: linear-gradient(90deg, transparent, var(--pink), transparent); }
+.axis-y { height: 100%; width: 1px; left: 50%; background: linear-gradient(180deg, transparent, var(--cyan), transparent); }
+
+.arena-label {
+  position: absolute;
+  color: rgba(154, 180, 212, .72);
+  font-size: .6rem;
+  letter-spacing: .15em;
+  font-weight: 800;
+  pointer-events: none;
+}
+.arena-label-top { top: 15px; left: 17px; }
+.arena-label-bottom { right: 17px; bottom: 14px; }
+
+.arena-center-mark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  color: rgba(66, 245, 233, .36);
+  font-size: 1.35rem;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.player {
+  --look-x: 0px;
+  --look-y: 0px;
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 50%;
+  width: 58px;
+  height: 56px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  filter: drop-shadow(0 0 10px rgba(66, 245, 233, .38));
+  will-change: left, top;
+}
+
+.player-body {
+  position: absolute;
+  inset: 2px 2px 8px;
+  display: block;
+  border: 1px solid rgba(190, 255, 250, .9);
+  border-radius: 48% 52% 43% 57% / 52% 43% 57% 48%;
+  background: linear-gradient(145deg, #a0fff5 0%, #43f4e4 43%, #32a9ee 78%, #4778ff 100%);
+  box-shadow:
+    inset -7px -8px 0 rgba(33, 85, 210, .24),
+    inset 4px 4px 0 rgba(255, 255, 255, .24),
+    0 0 18px rgba(66, 245, 233, .48);
+  animation: player-float 2s ease-in-out infinite;
+}
+
+.player-body::before {
+  content: "";
+  position: absolute;
+  width: 15px;
+  height: 11px;
+  right: 1px;
+  top: -5px;
+  border-radius: 60% 40% 60% 40%;
+  background: var(--pink);
+  box-shadow: 0 0 12px rgba(255, 79, 216, .9);
+  transform: rotate(18deg);
+}
+
+.player-eye {
+  position: absolute;
+  top: 20px;
+  width: 6px;
+  height: 10px;
+  border-radius: 50%;
+  background: #07172b;
+  box-shadow: 0 0 2px rgba(255,255,255,.4);
+  transition: transform .08s linear;
+  transform: translate(var(--look-x), var(--look-y));
+}
+.player-eye-left { left: 18px; }
+.player-eye-right { right: 17px; }
+
+.player-cheek {
+  position: absolute;
+  top: 31px;
+  width: 8px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ff91df;
+  box-shadow: 0 0 6px rgba(255, 79, 216, .48);
+}
+.player-cheek-left { left: 9px; }
+.player-cheek-right { right: 8px; }
+
+.player-core {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  left: 50%;
+  top: 8px;
+  border-radius: 50%;
+  background: #f5ffff;
+  box-shadow: 0 0 7px #fff, 0 0 14px var(--cyan);
+  transform: translateX(-50%);
+}
+.player-spark {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  left: 5px;
+  top: 7px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: .8;
+}
+.player-shadow {
+  position: absolute;
+  left: 14px;
+  right: 12px;
+  bottom: 1px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .44);
+  filter: blur(3px);
+}
+.player.is-moving .player-body {
+  filter: saturate(1.16) brightness(1.06);
+}
+
+.stage-controls {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.movement-guide {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.key-row { display: inline-flex; gap: 4px; }
+.keycap {
+  min-width: 24px;
+  height: 25px;
+  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #d8fffc;
+  border: 1px solid rgba(66, 245, 233, .34);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: rgba(66, 245, 233, .08);
+  font-size: .68rem;
+  font-weight: 850;
+}
+.keycap-arrow { min-width: 22px; }
+.guide-text {
+  margin-left: 4px;
+  color: var(--cyan);
+  font-size: .65rem;
+  font-weight: 800;
+  letter-spacing: .11em;
+}
+.guide-divider { width: 1px; height: 24px; margin: 0 8px; background: rgba(137, 171, 226, .2); }
+.guide-secondary {
+  color: var(--muted);
+  font-weight: 500;
+  letter-spacing: 0;
+  margin-left: 7px;
+}
+
+.movement-readout {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 85px;
+}
+.readout-label {
+  color: var(--muted);
+  font-size: .56rem;
+  font-weight: 800;
+  letter-spacing: .15em;
+}
+.movement-readout strong {
+  color: var(--cyan);
+  font-size: .68rem;
+  letter-spacing: .12em;
+}
+.stage-back-button { flex-shrink: 0; padding: 10px 13px; }
+
+@keyframes player-float {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-3px) rotate(3deg); }
+}
+
+@media (min-width: 1500px) {
+  .experiment-screen { width: min(calc(100% - 48px), 1800px); }
+  .arena-grid { background-size: 48px 48px; }
+}
+
+@media (max-width: 800px) {
+  .experiment-screen { width: min(calc(100% - 24px), 1600px); }
+  .experiment-content { gap: 10px; padding: 10px 0 12px; }
+  .game-arena { min-height: clamp(360px, calc(100dvh - 250px), 800px); }
+  .stage-controls { flex-wrap: wrap; justify-content: space-between; }
+  .guide-secondary { width: 100%; margin: 5px 0 0 2px; }
+  .guide-divider, .keycap-arrow { display: none; }
+}
+
+@media (max-width: 520px) {
+  .experiment-screen { width: calc(100% - 18px); }
+  .stage-heading .eyebrow { font-size: .58rem; letter-spacing: .12em; }
+  .stage-heading h1 { font-size: 1.7rem; }
+  .stage-badge { padding: 7px 8px; font-size: .56rem; }
+  .game-arena { min-height: clamp(350px, calc(100dvh - 250px), 700px); }
+  .arena-grid { background-size: 32px 32px; }
+  .movement-guide { max-width: 72%; }
+  .movement-readout { min-width: 60px; }
+  .stage-back-button { font-size: .75rem; padding: 9px 10px; }
+  .arena-label { font-size: .5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .player-body { animation: none; }
+}
