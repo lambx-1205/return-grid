@@ -463,26 +463,46 @@ h1 span {
 
 .player-eye {
   position: absolute;
-  top: 17px;
+  top: 13px;
   left: 50%;
-  width: 12px;
-  height: 15px;
+  width: 29px;
+  height: 24px;
   transform: translateX(-50%);
-  border: 1px solid rgba(226, 255, 255, .8);
-  border-radius: 48% 52% 50% 50%;
-  background: radial-gradient(ellipse at 45% 40%, #102e4a, #03182c 74%);
-  box-shadow: 0 0 5px rgba(66, 245, 233, .16);
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, .98);
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at 72% 48%, #ffffff 0 17%, #d9f8ff 44%, #81d8fb 72%, #3f9be6 100%);
+  box-shadow:
+    0 0 0 1px rgba(66, 245, 233, .7),
+    0 0 8px rgba(224, 252, 255, .72);
+}
+
+.player-eye::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 1px;
+  width: 17px;
+  height: 19px;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at 34% 25%, #234f80 0 20%, #07172d 62%, #020b18 100%);
+  box-shadow:
+    inset -2px -1px 0 rgba(42, 147, 224, .9),
+    1px 0 0 2px rgba(7, 26, 49, .86);
 }
 
 .player-eye-shine {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 4px;
-  height: 5px;
+  z-index: 1;
+  top: 4px;
+  left: 6px;
+  width: 6px;
+  height: 7px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 0 4px rgba(255,255,255,.8);
+  box-shadow: 0 0 4px rgba(255,255,255,.9);
 }
 
 .player-cheek {
