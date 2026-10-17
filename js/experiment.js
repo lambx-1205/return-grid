@@ -111,16 +111,24 @@
     const moving = dx !== 0 || dy !== 0;
 
     if (moving) {
-      // The 20 x 10 board uses a straight coordinate grid.
+      // The 23 x 11 board uses a straight coordinate grid.
       // One axis moves at a time, so a side wall cannot block vertical travel.
       x += dx * speed * delta;
       y += dy * speed * delta;
       keepInsideArena();
 
       player.classList.add("is-moving");
+      player.classList.toggle("moving-left", dx < 0);
+      player.classList.toggle("moving-right", dx > 0);
+      player.classList.toggle("moving-up", dy < 0);
+      player.classList.toggle("moving-down", dy > 0);
+      player.style.setProperty("--trail-x", `${-dx * 8}px`);
+      player.style.setProperty("--trail-y", `${-dy * 8}px`);
       movementStatus.textContent = "MOVING";
     } else {
-      player.classList.remove("is-moving");
+      player.classList.remove("is-moving", "moving-left", "moving-right", "moving-up", "moving-down");
+      player.style.setProperty("--trail-x", "0px");
+      player.style.setProperty("--trail-y", "0px");
       movementStatus.textContent = "STANDBY";
     }
 
