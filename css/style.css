@@ -314,6 +314,8 @@ h1 span {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .player.is-moving .player-body { animation: none; }
+  .player-trail { transition: none; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
 
@@ -459,25 +461,28 @@ h1 span {
   transform: rotate(-27deg);
 }
 
-.player-face {
+.player-eye {
   position: absolute;
-  top: 20px;
+  top: 17px;
   left: 50%;
-  width: 25px;
-  height: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
+  width: 12px;
+  height: 15px;
   transform: translateX(-50%);
+  border: 1px solid rgba(226, 255, 255, .8);
+  border-radius: 48% 52% 50% 50%;
+  background: radial-gradient(ellipse at 45% 40%, #102e4a, #03182c 74%);
+  box-shadow: 0 0 5px rgba(66, 245, 233, .16);
 }
 
-.player-eye {
+.player-eye-shine {
+  position: absolute;
+  top: 2px;
+  right: 2px;
   width: 4px;
-  height: 7px;
+  height: 5px;
   border-radius: 50%;
-  background: #06233a;
-  box-shadow: 0 0 2px rgba(255,255,255,.24);
+  background: #fff;
+  box-shadow: 0 0 4px rgba(255,255,255,.8);
 }
 
 .player-cheek {
@@ -492,15 +497,21 @@ h1 span {
 .player-cheek-left { left: 10px; }
 .player-cheek-right { right: 10px; }
 
-.player-smile {
+
+.player-trail {
   position: absolute;
-  top: 30px;
-  left: 50%;
-  width: 8px;
-  height: 4px;
-  transform: translateX(-50%);
-  border-bottom: 1.5px solid rgba(6, 35, 58, .84);
-  border-radius: 0 0 50% 50%;
+  inset: 8px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(66,245,233,.44), rgba(77,141,255,.18) 45%, transparent 72%);
+  filter: blur(4px);
+  opacity: 0;
+  transform: translate(0, 0) scale(.55);
+  transition: opacity 100ms linear, transform 100ms ease-out;
+}
+
+.player.is-moving .player-trail {
+  opacity: .72;
+  transform: translate(var(--trail-x, 0px), var(--trail-y, 0px)) scale(.9);
 }
 
 .player-shadow {
@@ -514,7 +525,23 @@ h1 span {
   filter: blur(3px);
 }
 .player.is-moving .player-body {
-  filter: saturate(1.1) brightness(1.04);
+  filter: saturate(1.2) brightness(1.08);
+  animation: slime-squish 180ms ease-in-out infinite alternate;
+}
+
+.player.moving-left .player-body { --slime-lean: -7deg; }
+.player.moving-right .player-body { --slime-lean: 7deg; }
+.player.moving-up .player-body { --slime-lean: 0deg; }
+.player.moving-down .player-body { --slime-lean: 0deg; }
+
+.player.is-moving .player-shadow {
+  opacity: .62;
+  transform: scaleX(.82);
+}
+
+@keyframes slime-squish {
+  from { transform: rotate(var(--slime-lean, 0deg)) scaleX(.94) scaleY(1.06); }
+  to { transform: rotate(var(--slime-lean, 0deg)) scaleX(1.06) scaleY(.94); }
 }
 
 .stage-controls {
