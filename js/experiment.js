@@ -92,7 +92,7 @@
   // Stage layout: 1 = hard block, 0 = walkable. The perimeter is always blocked.
   const STAGE_MAP = [
     "11111111111111111111111",
-    "10101010101010101010101",
+    "10000000000000000000001",
     "10000000000000000000001",
     "10101010101010101010101",
     "10000000000000000000001",
@@ -100,7 +100,7 @@
     "10000000000000000000001",
     "10101010101010101010101",
     "10000000000000000000001",
-    "10101010101010101010101",
+    "10000000000000000000001",
     "11111111111111111111111"
   ];
   const hardBlockCells = [];
@@ -128,10 +128,14 @@
   function collidesWithHardBlock(centerX, centerY) {
     const cellWidth = arena.clientWidth / GRID_COLUMNS;
     const cellHeight = arena.clientHeight / GRID_ROWS;
-    const left = centerX - playerRadius.x;
-    const right = centerX + playerRadius.x;
-    const top = centerY - playerRadius.y;
-    const bottom = centerY + playerRadius.y;
+    // Use a smaller gameplay hitbox than the sprite. The art can nearly fill a cell,
+    // while the reduced hitbox lets the player pass comfortably through one-cell lanes.
+    const hitboxHalfWidth = cellWidth * 0.30;
+    const hitboxHalfHeight = cellHeight * 0.30;
+    const left = centerX - hitboxHalfWidth;
+    const right = centerX + hitboxHalfWidth;
+    const top = centerY - hitboxHalfHeight;
+    const bottom = centerY + hitboxHalfHeight;
 
     return hardBlockCells.some(({ row, col }) => {
       const blockLeft = col * cellWidth;
