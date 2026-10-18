@@ -30,6 +30,7 @@
   const ENEMY_SPEED = 72;
   let enemyX = 0;
   let enemyY = 0;
+  let enemyAlive = true;
   let enemyRow = 1;
   let enemyCol = GRID_COLUMNS - 2;
   let enemyDirectionX = -1;
@@ -79,6 +80,9 @@
 
   function placeEnemyAtStart() {
     // Start at the upper-right walkable cell inside the perimeter.
+    enemyAlive = true;
+    enemyDrone.hidden = false;
+    enemyDrone.classList.remove("is-exploding");
     enemyRow = 1;
     enemyCol = GRID_COLUMNS - 2;
     enemyDirectionX = -1;
@@ -115,7 +119,7 @@
       isWalkableCell(enemyRow + direction.y, enemyCol + direction.x)
     );
 
-    if (sideOptions.length > 0 && Math.random() < 0.25) {
+    if (sideOptions.length > 0 && Math.random() < 0.40) {
       const chosen = sideOptions[Math.floor(Math.random() * sideOptions.length)];
       enemyDirectionX = chosen.x;
       enemyDirectionY = chosen.y;
@@ -126,6 +130,7 @@
   }
 
   function updateEnemy(delta) {
+    if (!enemyAlive) return;
     const cellWidth = arena.clientWidth / GRID_COLUMNS;
     const cellHeight = arena.clientHeight / GRID_ROWS;
     let remaining = ENEMY_SPEED * delta;
@@ -377,6 +382,30 @@
     renderProjectile();
   }
 
+  function explodeEnemy() {
+    if (!enemyAlive) return;
+    enemyAlive = false;
+    enemyDrone.setAttribute("aria-hidden", "true");
+    enemyDrone.classList.add("is-exploding");
+  }
+
+  function checkProjectileEnemyCollision() {
+    if (!enemyAlive || !projectile.active) return;
+
+    // Compare the projectile and drone as circles using their visual size.
+    const enemyRadius = enemyDrone.getBoundingClientRect().width / 2;
+    const contactDistance = enemyRadius + PROJECTILE_SIZE / 2;
+    if (Math.hypot(projectile.x - enemyX, projectile.y - enemyY) <= contactDistance) {
+      explodeEnemy();
+    }
+  }
+
+  enemyDrone.addEventListener("animationend", event => {
+    if (event.animationName === "enemy-drone-explode") {
+      enemyDrone.hidden = true;
+    }
+  });
+
   function onKeyDown(event) {
     if (event.code === "Space" || event.key === " ") {
       event.preventDefault();
@@ -457,6 +486,7 @@
 
     updateEnemy(delta);
     updateProjectile(delta);
+    checkProjectileEnemyCollision();
     renderPlayer();
     window.requestAnimationFrame(frame);
   }
