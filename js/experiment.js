@@ -9,6 +9,9 @@
   const scoreCount = document.querySelector("#score-count");
   const projectileElement = document.querySelector("#projectile");
   const movementStatus = document.querySelector("#movement-status");
+  const attackCooldown = document.querySelector("#attack-cooldown");
+  const attackCooldownRing = document.querySelector("#attack-cooldown-ring");
+  const attackCooldownValue = document.querySelector("#attack-cooldown-value");
   const lifeCount = document.querySelector("#life-count");
   const lifeIcons = document.querySelector("#life-icons");
   const respawnOverlay = document.querySelector("#respawn-overlay");
@@ -26,6 +29,7 @@
   const gameStartButton = document.querySelector("#game-start-button");
 
   if (!arena || !player || !enemyDrone || !stageBlocks || !projectileElement || !movementStatus ||
+      !attackCooldown || !attackCooldownRing || !attackCooldownValue ||
       !lifeCount || !lifeIcons || !scoreCount || !respawnOverlay || !respawnCountdown ||
       !restartButton || !gameoverOverlay || !gameoverRestart || !stageSetup || !gameplayView ||
       !stageTitle || !stageBadge || !enemyCountValue || !enemyCountDecrease || !enemyCountIncrease ||
@@ -57,10 +61,14 @@
   let configuredDroneCount = DEFAULT_DRONE_COUNT;
   let gameStarted = false;
   const enemyUnits = [];
+  const softBlockCells = new Map();
   let score = 0;
   const PROJECTILE_SIZE = 40;
   const PROJECTILE_SPEED = 300;
   const PROJECTILE_RETURN_SPEED = 340;
+  const SOFT_BLOCK_HIT_POINTS = 2;
+  const ATTACK_COOLDOWN_MS = 1500;
+  let attackCooldownEndsAt = 0;
   let projectileRangeCells = 3; // Boomerang range is measured in grid cells.
   let x = 0;
   let y = 0;
@@ -113,10 +121,15 @@
     }
   }
 
+  function cellKey(row, col) {
+    return `${row},${col}`;
+  }
+
   function isWalkableCell(row, col) {
     return row >= 0 && row < GRID_ROWS &&
       col >= 0 && col < GRID_COLUMNS &&
-      STAGE_MAP[row][col] === "0";
+      STAGE_MAP[row][col] === "0" &&
+      !softBlockCells.has(cellKey(row, col));
   }
 
   const ENEMY_DIRECTIONS = [
@@ -283,6 +296,26 @@
     scoreCount.textContent = String(score);
   }
 
+  function updateAttackCooldown(time) {
+    const remainingMs = Math.max(0, attackCooldownEndsAt - time);
+    const isCooling = remainingMs > 0;
+    const remainingRatio = Math.min(1, remainingMs / ATTACK_COOLDOWN_MS);
+    const angle = isCooling ? remainingRatio * 360 : 360;
+    attackCooldownRing.style.setProperty("--cooldown-angle", `${angle}deg`);
+    attackCooldown.classList.toggle("is-cooling", isCooling);
+    attackCooldown.classList.toggle("is-ready", !isCooling);
+    attackCooldownValue.textContent = isCooling ? (remainingMs / 1000).toFixed(1) : "GO";
+    attackCooldown.setAttribute(
+      "aria-label",
+      isCooling ? `攻撃クールタイム残り ${(remainingMs / 1000).toFixed(1)} 秒` : "攻撃可能"
+    );
+  }
+
+  function startAttackCooldown(time) {
+    attackCooldownEndsAt = time + ATTACK_COOLDOWN_MS;
+    updateAttackCooldown(time);
+  }
+
   function collectEnemyPoints(unit) {
     score += unit.points;
     renderScore();
@@ -347,6 +380,8 @@
     gameState = "playing";
     respawnEndsAt = 0;
     invincibleUntil = 0;
+    attackCooldownEndsAt = 0;
+    updateAttackCooldown(performance.now());
     respawnOverlay.hidden = true;
     player.classList.remove("is-dying", "is-respawning", "is-invincible", "is-moving", "moving-left", "moving-right", "moving-up", "moving-down");
     player.style.setProperty("--trail-x", "0px");
@@ -355,6 +390,7 @@
     movementStatus.textContent = "STANDBY";
     renderLives();
     resetProjectile();
+    generateSoftBlocks();
     placePlayerAtStart();
     placeEnemyAtStart();
   }
@@ -430,7 +466,7 @@
     }
   });
 
-  // Stage layout: 1 = hard block, 0 = walkable. The perimeter is always blocked.
+  // Stage layout: 1 = hard block, 0 = floor. Soft blocks are generated onto floor cells.
   const STAGE_MAP = [
     "11111111111111111111111",
     "10000000000010000000001",
@@ -466,26 +502,103 @@
     stageBlocks.replaceChildren(fragment);
   }
 
-  function collidesWithHardBlock(centerX, centerY) {
+  function generateSoftBlocks() {
+    // Remove intact and still-animating remnants before building the next layout.
+    stageBlocks.querySelectorAll(".soft-block").forEach(element => element.remove());
+    softBlockCells.clear();
+
+    const floorCells = [];
+    for (let row = 1; row < GRID_ROWS - 1; row += 1) {
+      for (let col = 1; col < GRID_COLUMNS - 1; col += 1) {
+        if (STAGE_MAP[row][col] === "0") floorCells.push({ row, col });
+      }
+    }
+
+    // Generate a random density between roughly one quarter and one third of all floor.
+    const targetCount = Math.min(
+      floorCells.length - 1,
+      Math.max(1, Math.round(floorCells.length * (0.25 + Math.random() * 0.08)))
+    );
+
+    // Keep the spawn cell and its immediate neighborhood clear so the player can start moving.
+    const available = new Map(
+      floorCells
+        .filter(cell => Math.abs(cell.row - 1) + Math.abs(cell.col - 1) > 2)
+        .map(cell => [cellKey(cell.row, cell.col), cell])
+    );
+    const fragment = document.createDocumentFragment();
+
+    function addSoftBlock(cell) {
+      const element = document.createElement("div");
+      element.className = "soft-block";
+      element.dataset.hp = String(SOFT_BLOCK_HIT_POINTS);
+      element.style.gridColumn = String(cell.col + 1);
+      element.style.gridRow = String(cell.row + 1);
+      const block = { row: cell.row, col: cell.col, hp: SOFT_BLOCK_HIT_POINTS, element };
+      softBlockCells.set(cellKey(cell.row, cell.col), block);
+      available.delete(cellKey(cell.row, cell.col));
+      fragment.appendChild(element);
+      return block;
+    }
+
+    // Grow small connected patches instead of scattering every block independently.
+    while (softBlockCells.size < targetCount && available.size > 0) {
+      const separatedSeeds = Array.from(available.values()).filter(cell =>
+        !ENEMY_DIRECTIONS.some(direction =>
+          softBlockCells.has(cellKey(cell.row + direction.y, cell.col + direction.x))
+        )
+      );
+      const seedPool = separatedSeeds.length ? separatedSeeds : Array.from(available.values());
+      const seed = seedPool[Math.floor(Math.random() * seedPool.length)];
+      const clusterGoal = Math.min(
+        2 + Math.floor(Math.random() * 4),
+        targetCount - softBlockCells.size
+      );
+      const cluster = [seed];
+      addSoftBlock(seed);
+
+      while (cluster.length < clusterGoal && softBlockCells.size < targetCount) {
+        const neighbors = new Map();
+        for (const cell of cluster) {
+          for (const direction of ENEMY_DIRECTIONS) {
+            const key = cellKey(cell.row + direction.y, cell.col + direction.x);
+            const neighbor = available.get(key);
+            if (neighbor) neighbors.set(key, neighbor);
+          }
+        }
+        if (!neighbors.size) break;
+        const choices = Array.from(neighbors.values());
+        const nextCell = choices[Math.floor(Math.random() * choices.length)];
+        cluster.push(nextCell);
+        addSoftBlock(nextCell);
+      }
+    }
+
+    stageBlocks.appendChild(fragment);
+  }
+
+  function collidesWithSolidBlock(centerX, centerY) {
     const cellWidth = arena.clientWidth / GRID_COLUMNS;
     const cellHeight = arena.clientHeight / GRID_ROWS;
-    // Use a smaller gameplay hitbox than the sprite. The art can nearly fill a cell,
-    // while the reduced hitbox lets the player pass comfortably through one-cell lanes.
+    // Keep the existing reduced hitbox so the sprite can comfortably use narrow lanes.
     const hitboxHalfWidth = cellWidth * 0.30;
     const hitboxHalfHeight = cellHeight * 0.30;
     const left = centerX - hitboxHalfWidth;
     const right = centerX + hitboxHalfWidth;
     const top = centerY - hitboxHalfHeight;
     const bottom = centerY + hitboxHalfHeight;
+    const firstCol = Math.floor(left / cellWidth);
+    const lastCol = Math.floor((right - 0.001) / cellWidth);
+    const firstRow = Math.floor(top / cellHeight);
+    const lastRow = Math.floor((bottom - 0.001) / cellHeight);
 
-    return hardBlockCells.some(({ row, col }) => {
-      const blockLeft = col * cellWidth;
-      const blockRight = blockLeft + cellWidth;
-      const blockTop = row * cellHeight;
-      const blockBottom = blockTop + cellHeight;
-      return right > blockLeft && left < blockRight &&
-        bottom > blockTop && top < blockBottom;
-    });
+    for (let row = firstRow; row <= lastRow; row += 1) {
+      for (let col = firstCol; col <= lastCol; col += 1) {
+        if (row < 0 || row >= GRID_ROWS || col < 0 || col >= GRID_COLUMNS) return true;
+        if (STAGE_MAP[row][col] === "1" || softBlockCells.has(cellKey(row, col))) return true;
+      }
+    }
+    return false;
   }
 
   function movePlayer(dx, dy, delta) {
@@ -493,8 +606,8 @@
     const nextY = y + dy * speed * delta;
 
     // Resolve each axis separately so the player can slide along a wall.
-    if (!collidesWithHardBlock(nextX, y)) x = nextX;
-    if (!collidesWithHardBlock(x, nextY)) y = nextY;
+    if (!collidesWithSolidBlock(nextX, y)) x = nextX;
+    if (!collidesWithSolidBlock(x, nextY)) y = nextY;
     keepInsideArena();
   }
 
@@ -547,7 +660,7 @@
   }
 
   function launchProjectile() {
-    if (projectile.active) return;
+    if (projectile.active || performance.now() < attackCooldownEndsAt) return;
     projectile.active = true;
     projectile.mode = "outbound";
     projectile.x = x;
@@ -602,6 +715,37 @@
     renderProjectile();
   }
 
+  function checkProjectileSoftBlockCollision(time) {
+    if (gameState !== "playing" || !projectile.active || projectile.mode !== "outbound") return;
+    const cellWidth = arena.clientWidth / GRID_COLUMNS;
+    const cellHeight = arena.clientHeight / GRID_ROWS;
+    const col = Math.floor(projectile.x / cellWidth);
+    const row = Math.floor(projectile.y / cellHeight);
+    const block = softBlockCells.get(cellKey(row, col));
+    if (!block) return;
+
+    projectile.active = false;
+    renderProjectile();
+    damageSoftBlock(block);
+    startAttackCooldown(time);
+  }
+
+  function damageSoftBlock(block) {
+    block.hp -= 1;
+    block.element.dataset.hp = String(block.hp);
+    if (block.hp > 0) {
+      block.element.classList.add("is-damaged");
+      return;
+    }
+
+    // Remove it from collision and navigation immediately; the short animation is cosmetic.
+    softBlockCells.delete(cellKey(block.row, block.col));
+    block.element.classList.add("is-destroying");
+    block.element.addEventListener("animationend", event => {
+      if (event.animationName === "soft-block-break") block.element.remove();
+    }, { once: true });
+  }
+
   function explodeEnemy(unit) {
     if (!unit.alive) return;
     unit.hp -= 1;
@@ -612,7 +756,7 @@
     collectEnemyPoints(unit);
   }
 
-  function checkProjectileEnemyCollision() {
+  function checkProjectileEnemyCollision(time) {
     if (gameState !== "playing" || !projectile.active) return;
     for (const unit of enemyUnits) {
       if (!unit.alive) continue;
@@ -622,6 +766,7 @@
         projectile.active = false;
         renderProjectile();
         explodeEnemy(unit);
+        startAttackCooldown(time);
         return;
       }
     }
@@ -660,6 +805,7 @@
     if (!previousTime) previousTime = time;
     const delta = Math.min((time - previousTime) / 1000, 0.05);
     previousTime = time;
+    updateAttackCooldown(time);
 
     if (gameState !== "playing") {
       // Keep the enemy patrolling during the countdown, but disable player input
@@ -724,7 +870,8 @@
 
     for (const unit of enemyUnits) updateEnemy(unit, delta);
     updateProjectile(delta);
-    checkProjectileEnemyCollision();
+    checkProjectileSoftBlockCollision(time);
+    checkProjectileEnemyCollision(time);
     handlePlayerEnemyCollision(time);
     renderPlayer();
     window.requestAnimationFrame(frame);
@@ -748,6 +895,7 @@
     gameState = "playing";
 
     buildHardBlocks();
+    generateSoftBlocks();
     fitPlayerToGrid();
     createEnemyUnits();
     fitEnemyToGrid();
