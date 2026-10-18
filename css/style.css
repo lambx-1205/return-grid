@@ -641,6 +641,75 @@ h1 span {
     linear-gradient(140deg, #3a4b60 0%, #17273a 53%, #263f57 100%);
 }
 
+
+/* Enemy drone: warm red palette to distinguish it from the cyan player. */
+.enemy-drone {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  top: 0;
+  width: 42px;
+  height: 42px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  border: 1px solid rgba(255, 220, 220, .95);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 24%, rgba(255,255,255,.95) 0 4%, rgba(255,180,180,.75) 9%, transparent 22%),
+    radial-gradient(circle at 36% 30%, #ff9a9a 0%, #ff454f 35%, #bd102c 72%, #5a071b 100%);
+  box-shadow:
+    inset -5px -6px 0 rgba(74, 0, 22, .34),
+    inset 3px 3px 0 rgba(255,255,255,.24),
+    0 0 8px rgba(255, 48, 72, .95),
+    0 0 19px rgba(255, 28, 64, .42);
+  will-change: left, top;
+}
+.drone-aura {
+  position: absolute;
+  inset: -7px;
+  border: 1px solid rgba(255, 64, 89, .45);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(255, 38, 72, .25), inset 0 0 8px rgba(255, 38, 72, .16);
+  animation: drone-pulse 1.5s ease-in-out infinite alternate;
+}
+.drone-ring {
+  position: absolute;
+  inset: 7px 3px;
+  border: 2px solid rgba(255, 220, 224, .82);
+  border-left-color: rgba(255, 85, 105, .9);
+  border-right-color: rgba(255, 85, 105, .9);
+  border-radius: 50%;
+  transform: rotate(-28deg);
+}
+.drone-eye {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(255, 235, 238, .95);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0 12%, #ffbdc4 28%, #79051c 76%);
+  box-shadow: 0 0 8px rgba(255, 235, 238, .95), 0 0 13px rgba(255, 30, 65, .8);
+}
+.drone-light {
+  position: absolute;
+  top: 17px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #fff3f4;
+  box-shadow: 0 0 7px #fff, 0 0 11px #ff3c58;
+}
+.drone-light-left { left: 6px; }
+.drone-light-right { right: 6px; }
+
+@keyframes drone-pulse {
+  from { opacity: .45; transform: scale(.94); }
+  to { opacity: .95; transform: scale(1.08); }
+}
+
 .projectile {
   position: absolute;
   z-index: 4;
