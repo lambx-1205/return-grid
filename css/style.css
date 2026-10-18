@@ -1476,3 +1476,17 @@ h1 span {
   -webkit-user-select: none;
   user-select: none;
 }
+
+/* Disable browser text selection across the experiment page, including its HUD and controls. */
+.page-experiment,
+.page-experiment * {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.game-arena {
+  touch-action: none;
+}
