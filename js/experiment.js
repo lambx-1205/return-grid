@@ -10,12 +10,15 @@
   const movementStatus = document.querySelector("#movement-status");
   const lifeCount = document.querySelector("#life-count");
   const lifeIcons = document.querySelector("#life-icons");
+  const respawnOverlay = document.querySelector("#respawn-overlay");
+  const respawnCountdown = document.querySelector("#respawn-countdown");
   const restartButton = document.querySelector("#restart-button");
   const gameoverOverlay = document.querySelector("#gameover-overlay");
   const gameoverRestart = document.querySelector("#gameover-restart");
 
   if (!arena || !player || !enemyDrone || !stageBlocks || !projectileElement || !movementStatus ||
-      !lifeCount || !lifeIcons || !restartButton || !gameoverOverlay || !gameoverRestart) {
+      !lifeCount || !lifeIcons || !respawnOverlay || !respawnCountdown ||
+      !restartButton || !gameoverOverlay || !gameoverRestart) {
     console.error("RETURN GRID: required movement-stage elements were not found.");
     return;
   }
@@ -51,8 +54,10 @@
   let facingY = -1;
   let previousTime = 0;
   const INITIAL_LIVES = 5;
+  const RESPAWN_DELAY_MS = 3000;
   let lives = INITIAL_LIVES;
   let gameState = "playing";
+  let respawnEndsAt = 0;
 
   const projectile = {
     active: false,
@@ -250,7 +255,9 @@
     clearKeys();
     lives = INITIAL_LIVES;
     gameState = "playing";
-    player.classList.remove("is-dying", "is-moving", "moving-left", "moving-right", "moving-up", "moving-down");
+    respawnEndsAt = 0;
+    respawnOverlay.hidden = true;
+    player.classList.remove("is-dying", "is-respawning", "is-moving", "moving-left", "moving-right", "moving-up", "moving-down");
     player.style.setProperty("--trail-x", "0px");
     player.style.setProperty("--trail-y", "0px");
     gameoverOverlay.hidden = true;
@@ -284,8 +291,29 @@
 
     lives -= 1;
     renderLives();
-    gameState = "dying";
+    gameState = "respawning";
+    respawnEndsAt = performance.now() + RESPAWN_DELAY_MS;
+    respawnCountdown.textContent = "3";
+    respawnOverlay.hidden = false;
+    movementStatus.textContent = "RESPAWNING";
     player.classList.add("is-dying");
+  }
+
+  function updateRespawnCountdown(time) {
+    const remainingMs = Math.max(0, respawnEndsAt - time);
+    const secondsRemaining = Math.ceil(remainingMs / 1000);
+    const displayValue = String(secondsRemaining);
+    if (respawnCountdown.textContent !== displayValue) {
+      respawnCountdown.textContent = displayValue;
+    }
+
+    if (remainingMs <= 0) {
+      respawnOverlay.hidden = true;
+      player.classList.remove("is-dying", "is-respawning");
+      placePlayerAtStart();
+      gameState = "playing";
+      movementStatus.textContent = "STANDBY";
+    }
   }
 
   player.addEventListener("animationend", event => {
@@ -295,9 +323,8 @@
       showGameOver();
       return;
     }
-    if (gameState === "dying") {
-      placePlayerAtStart();
-      gameState = "playing";
+    if (gameState === "respawning") {
+      player.classList.add("is-respawning");
     }
   });
 
@@ -534,6 +561,12 @@
     previousTime = time;
 
     if (gameState !== "playing") {
+      // Keep the enemy patrolling during the countdown, but disable player input
+      // and all collision checks until the player has returned.
+      if (gameState === "respawning") {
+        updateEnemy(delta);
+        updateRespawnCountdown(time);
+      }
       window.requestAnimationFrame(frame);
       return;
     }
