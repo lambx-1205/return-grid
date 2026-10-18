@@ -1416,3 +1416,55 @@ h1 span {
   box-shadow: 0 0 34px rgba(66, 245, 233, .42);
   filter: brightness(1.06);
 }
+
+
+/* The shared .enemy-drone rule comes later in the stylesheet; re-center
+   the setup preview after that rule so it cannot pin the portrait to a corner. */
+.enemy-preview-portrait .enemy-preview-drone {
+  left: 50%;
+  top: 50%;
+  right: auto;
+  bottom: auto;
+  transform: translate(-50%, -50%) scale(var(--drone-scale, 1));
+  transform-origin: 50% 50%;
+}
+
+/* Three seconds of visible protection after a respawn. */
+.player.is-invincible {
+  animation: player-invincibility-pulse 520ms ease-in-out infinite alternate;
+}
+.player.is-invincible .player-body {
+  border-color: rgba(255, 255, 255, .98);
+  box-shadow:
+    inset -6px -8px 0 rgba(34, 71, 187, .1),
+    inset 4px 4px 0 rgba(255, 255, 255, .36),
+    0 0 10px rgba(255, 255, 255, .95),
+    0 0 22px rgba(66, 245, 233, .9),
+    0 0 36px rgba(66, 245, 233, .54);
+}
+.player.is-invincible::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  inset: -8px;
+  border: 2px solid rgba(209, 255, 252, .9);
+  border-radius: 50%;
+  box-shadow:
+    0 0 8px rgba(255, 255, 255, .9),
+    0 0 19px rgba(66, 245, 233, .9),
+    inset 0 0 12px rgba(66, 245, 233, .25);
+  pointer-events: none;
+  animation: player-shield-pulse 650ms ease-in-out infinite alternate;
+}
+@keyframes player-invincibility-pulse {
+  from {
+    filter: drop-shadow(0 0 11px rgba(66, 245, 233, .72)) drop-shadow(0 0 20px rgba(255, 255, 255, .25));
+  }
+  to {
+    filter: drop-shadow(0 0 18px rgba(66, 245, 233, 1)) drop-shadow(0 0 34px rgba(255, 255, 255, .65));
+  }
+}
+@keyframes player-shield-pulse {
+  from { opacity: .58; transform: scale(.94); }
+  to { opacity: 1; transform: scale(1.1); }
+}
