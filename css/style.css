@@ -642,7 +642,7 @@ h1 span {
 }
 
 
-/* Enemy drone: warm red palette to distinguish it from the cyan player. */
+/* Enemy drone: cute dark shell with vivid crimson energy accents. */
 .enemy-drone {
   position: absolute;
   z-index: 3;
@@ -652,46 +652,54 @@ h1 span {
   height: 42px;
   transform: translate(-50%, -50%) scale(var(--drone-scale, 1));
   pointer-events: none;
-  border: 1px solid rgba(255, 220, 220, .95);
+  border: 1px solid rgba(255, 81, 105, .86);
   border-radius: 50%;
   background:
-    radial-gradient(circle at 32% 24%, rgba(255,255,255,.95) 0 4%, rgba(255,180,180,.75) 9%, transparent 22%),
-    radial-gradient(circle at 36% 30%, #ff9a9a 0%, #ff454f 35%, #bd102c 72%, #5a071b 100%);
+    radial-gradient(ellipse at 29% 20%, rgba(255,255,255,.25) 0 3%, transparent 18%),
+    radial-gradient(circle at 36% 30%, #34313c 0%, #171722 43%, #090a12 72%, #02030a 100%);
   box-shadow:
-    inset -5px -6px 0 rgba(74, 0, 22, .34),
-    inset 3px 3px 0 rgba(255,255,255,.24),
-    0 0 8px rgba(255, 48, 72, .95),
-    0 0 19px rgba(255, 28, 64, .42);
+    inset -5px -6px 0 rgba(0, 0, 0, .72),
+    inset 3px 3px 0 rgba(255, 255, 255, .09),
+    inset 0 0 0 2px rgba(255, 45, 77, .16),
+    0 0 7px rgba(255, 28, 62, .8),
+    0 0 17px rgba(255, 20, 56, .32);
   will-change: left, top;
 }
 .drone-aura {
   position: absolute;
-  inset: -7px;
-  border: 1px solid rgba(255, 64, 89, .45);
+  inset: -8px;
+  border: 1px solid rgba(255, 44, 76, .46);
   border-radius: 50%;
-  box-shadow: 0 0 10px rgba(255, 38, 72, .25), inset 0 0 8px rgba(255, 38, 72, .16);
-  animation: drone-pulse 1.5s ease-in-out infinite alternate;
+  box-shadow:
+    0 0 10px rgba(255, 24, 61, .28),
+    inset 0 0 9px rgba(255, 24, 61, .12);
+  animation: drone-pulse 1.7s ease-in-out infinite alternate;
 }
 .drone-ring {
   position: absolute;
-  inset: 7px 3px;
-  border: 2px solid rgba(255, 220, 224, .82);
-  border-left-color: rgba(255, 85, 105, .9);
-  border-right-color: rgba(255, 85, 105, .9);
+  inset: 6px 2px;
+  border: 1.5px solid rgba(255, 48, 77, .88);
+  border-left-color: rgba(255, 150, 163, .94);
+  border-right-color: rgba(255, 150, 163, .94);
   border-radius: 50%;
   transform: rotate(-28deg);
+  box-shadow: 0 0 5px rgba(255, 25, 58, .65);
 }
 .drone-eye {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 12px;
-  height: 12px;
+  width: 13px;
+  height: 13px;
   transform: translate(-50%, -50%);
-  border: 2px solid rgba(255, 235, 238, .95);
+  border: 2px solid rgba(255, 153, 166, .98);
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff 0 12%, #ffbdc4 28%, #79051c 76%);
-  box-shadow: 0 0 8px rgba(255, 235, 238, .95), 0 0 13px rgba(255, 30, 65, .8);
+  background:
+    radial-gradient(circle at 38% 30%, #fff5f6 0 9%, #ff899a 18%, #ff234f 42%, #7a001c 76%);
+  box-shadow:
+    0 0 5px rgba(255, 224, 230, .95),
+    0 0 10px rgba(255, 26, 66, .96),
+    0 0 18px rgba(255, 13, 57, .55);
 }
 .drone-light {
   position: absolute;
@@ -699,17 +707,16 @@ h1 span {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #fff3f4;
-  box-shadow: 0 0 7px #fff, 0 0 11px #ff3c58;
+  background: #ffb6c1;
+  box-shadow: 0 0 5px #ffb6c1, 0 0 10px #ff234f;
 }
-.drone-light-left { left: 6px; }
-.drone-light-right { right: 6px; }
+.drone-light-left { left: 5px; }
+.drone-light-right { right: 5px; }
 
 @keyframes drone-pulse {
-  from { opacity: .45; transform: scale(.94); }
-  to { opacity: .95; transform: scale(1.08); }
+  from { opacity: .4; transform: scale(.93); }
+  to { opacity: .92; transform: scale(1.08); }
 }
-
 .projectile {
   position: absolute;
   z-index: 4;
