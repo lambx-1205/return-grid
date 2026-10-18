@@ -545,9 +545,13 @@ h1 span {
   background: rgba(0, 0, 0, .42);
   filter: blur(3px);
 }
+.player-body {
+  transform-origin: 50% 100%;
+}
+
 .player.is-moving .player-body {
-  filter: saturate(1.2) brightness(1.08);
-  animation: slime-squish 180ms ease-in-out infinite alternate;
+  filter: saturate(1.22) brightness(1.09);
+  animation: slime-squish 260ms cubic-bezier(.42, 0, .58, 1) infinite alternate;
 }
 
 .player.moving-left .player-body { --slime-lean: -7deg; }
@@ -557,12 +561,18 @@ h1 span {
 
 .player.is-moving .player-shadow {
   opacity: .62;
-  transform: scaleX(.82);
+  transform: scaleX(.76);
 }
 
 @keyframes slime-squish {
-  from { transform: rotate(var(--slime-lean, 0deg)) scaleX(.94) scaleY(1.06); }
-  to { transform: rotate(var(--slime-lean, 0deg)) scaleX(1.06) scaleY(.94); }
+  from {
+    transform: rotate(var(--slime-lean, 0deg)) translateY(1px) scaleX(1.09) scaleY(.80);
+    border-radius: 48% 52% 43% 57% / 48% 49% 51% 52%;
+  }
+  to {
+    transform: rotate(var(--slime-lean, 0deg)) translateY(-3px) scaleX(.91) scaleY(1.18);
+    border-radius: 51% 49% 47% 53% / 62% 65% 35% 38%;
+  }
 }
 
 .stage-blocks {
@@ -642,11 +652,17 @@ h1 span {
   filter: drop-shadow(0 0 7px rgba(66, 245, 233, .7));
 }
 .projectile[hidden] { display: none !important; }
+.projectile[data-mode="turn"] {
+  scale: 1.18;
+  filter: drop-shadow(0 0 11px rgba(255, 79, 216, .82));
+}
+.projectile[data-mode="turn"] .projectile-rotor { animation-duration: 150ms; }
+.projectile[data-mode="return"] { filter: drop-shadow(0 0 9px rgba(66, 245, 233, .9)); }
 
 .projectile-rotor {
   position: absolute;
   inset: 0;
-  animation: boomerang-spin 360ms linear infinite;
+  animation: boomerang-spin 250ms linear infinite;
 }
 
 .projectile-arm {
