@@ -27,11 +27,17 @@
 
       <div class="arena-hud-row">
         <div class="arena-hud" aria-live="polite">
-          <span class="score-label">SCORE</span>
-          <strong id="score-count">0</strong>
-          <span class="life-label">LIFE</span>
-          <strong id="life-count">5</strong>
-          <span class="life-icons" id="life-icons" aria-hidden="true">● ● ● ● ●</span>
+          <div class="score-display">
+            <span class="score-label">SCORE</span>
+            <strong id="score-count">0</strong>
+          </div>
+          <div class="life-display">
+            <div class="life-main">
+              <span class="life-label">LIFE</span>
+              <strong id="life-count">5</strong>
+            </div>
+            <span class="life-icons" id="life-icons" aria-hidden="true">● ● ● ● ●</span>
+          </div>
         </div>
       </div>
 
