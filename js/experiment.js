@@ -61,7 +61,7 @@
   const PROJECTILE_SIZE = 40;
   const PROJECTILE_SPEED = 300;
   const PROJECTILE_RETURN_SPEED = 340;
-  let projectileRangeCells = 3; // Future range-upgrade items can increase this value.
+  let projectileRangeCells = 3; // Boomerang range is measured in grid cells.
   let x = 0;
   let y = 0;
   let facingX = 0;
