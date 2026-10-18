@@ -1392,3 +1392,27 @@ h1 span {
   .stage-back-button { font-size: .75rem; padding: 9px 10px; }
 }
 
+
+
+/* Keep the setup action distinct from the red game-over/restart buttons. */
+.primary-button.setup-start-button {
+  min-width: 235px;
+  min-height: 56px;
+  margin: 0;
+  padding: 0 20px;
+  border: 1px solid #b2fff9;
+  border-radius: 8px;
+  color: #06151d;
+  background: linear-gradient(105deg, var(--cyan), #8afbea);
+  font: inherit;
+  font-weight: 900;
+  letter-spacing: .12em;
+  box-shadow: 0 0 24px rgba(66, 245, 233, .23);
+}
+.primary-button.setup-start-button:hover,
+.primary-button.setup-start-button:focus-visible {
+  transform: translateY(-2px);
+  border-color: #e3fffc;
+  box-shadow: 0 0 34px rgba(66, 245, 233, .42);
+  filter: brightness(1.06);
+}
