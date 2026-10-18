@@ -1804,3 +1804,193 @@ h1 span {
 .enemy-preview-portrait--fade{border-color:rgba(180,155,255,.4);background:radial-gradient(circle,rgba(140,100,255,.2),transparent 68%),#100b22}.enemy-drone.enemy-fade{border-color:#c7b5ff;opacity:.9;box-shadow:inset -5px -6px 0 rgba(0,0,0,.7),0 0 9px #a58aff,0 0 22px rgba(140,100,255,.65)}.enemy-drone.enemy-fade .drone-ring{border-color:#eee5ff;border-left-color:#6c45d9;border-right-color:#6c45d9}.enemy-drone.enemy-fade .drone-eye{background:radial-gradient(circle,#fff 0 12%,#c5aaff 35%,#6237c4 75%);box-shadow:0 0 14px #a58aff}
 .enemy-projectile{filter:hue-rotate(145deg) saturate(1.3);z-index:8}.enemy-fade-trail{pointer-events:none;opacity:.7;filter:blur(1px);animation:fade-trail-out 650ms ease-out forwards}@keyframes fade-trail-out{to{opacity:0;transform:scale(.55);filter:blur(5px)}}
 .enemy-total-count{margin:5px 0 0;color:var(--cyan);font-size:.62rem;font-weight:850;letter-spacing:.1em;text-align:right}
+
+
+/* UI repair: all enemy cards now share a fixed footprint, and the full list scrolls as one unit. */
+.stage-setup { max-height: calc(100vh - 250px); max-height: calc(100dvh - 250px); }
+.enemy-config-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+.enemy-config-list .enemy-config-card,
+.enemy-config-list .enemy-config-card + .enemy-config-card {
+  box-sizing: border-box;
+  flex: 0 0 122px;
+  height: 122px;
+  min-height: 122px;
+  display: grid;
+  grid-template-columns: 62px minmax(0,1fr) 142px;
+  align-items: center;
+  gap: 11px;
+  margin: 0;
+  padding: 9px 11px;
+  overflow: hidden;
+}
+.enemy-config-list .enemy-preview-portrait {
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
+  overflow: visible;
+}
+.enemy-config-list .enemy-preview-drone { --drone-scale: .76; }
+.enemy-config-list .enemy-preview-text { min-width: 0; overflow: hidden; }
+.enemy-config-list .enemy-preview-text h3 {
+  margin: 2px 0 0;
+  font-size: .95rem;
+  line-height: 1.1;
+  letter-spacing: .08em;
+  white-space: nowrap;
+}
+.enemy-config-list .enemy-preview-text p {
+  min-height: 1.1em;
+  margin-top: 3px;
+  font-size: .62rem;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.enemy-config-list .unit-index { font-size: .47rem; letter-spacing: .12em; }
+.enemy-config-list .unit-stats { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 5px; }
+.enemy-config-list .unit-stats span {
+  padding: 2px 4px;
+  font-size: .47rem;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.enemy-config-list .enemy-count-control {
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 3px;
+  padding: 0 0 0 8px;
+  border-left: 1px solid rgba(137,171,226,.13);
+}
+.enemy-config-list .count-label { width: 100%; font-size: .46rem; letter-spacing: .06em; text-align: center; white-space: nowrap; }
+.enemy-config-list .quantity-stepper { gap: 6px; margin-top: 2px; }
+.enemy-config-list .quantity-button { width: 26px; height: 26px; flex-basis: 26px; }
+.enemy-config-list .count-hint { margin-top: 2px; font-size: .43rem; white-space: nowrap; }
+.enemy-config-list [id$="-count-value"] { min-width: 23px; font-size: 1.2rem; line-height: 1; }
+.enemy-total-count { margin-top: 4px; }
+
+@media (max-width: 800px) {
+  .stage-setup { max-height: calc(100vh - 220px); max-height: calc(100dvh - 220px); }
+  .enemy-config-list .enemy-config-card,
+  .enemy-config-list .enemy-config-card + .enemy-config-card {
+    flex-basis: 146px;
+    height: 146px;
+    min-height: 146px;
+    grid-template-columns: 50px minmax(0,1fr);
+    grid-template-rows: minmax(0,1fr) auto;
+    gap: 5px 9px;
+    padding: 8px;
+  }
+  .enemy-config-list .enemy-preview-portrait { width: 48px; height: 48px; }
+  .enemy-config-list .enemy-preview-drone { --drone-scale: .62; }
+  .enemy-config-list .enemy-count-control {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 5px 0 0;
+    border-left: 0;
+    border-top: 1px solid rgba(137,171,226,.13);
+  }
+  .enemy-config-list .count-label { width: auto; text-align: left; font-size: .49rem; }
+  .enemy-config-list .quantity-stepper { gap: 4px; margin: 0; }
+  .enemy-config-list .quantity-button { width: 25px; height: 25px; flex-basis: 25px; }
+  .enemy-config-list [id$="-count-value"] { min-width: 20px; font-size: 1.1rem; }
+  .enemy-config-list .count-hint { font-size: .46rem; margin: 0; }
+}
+@media (max-width: 520px) {
+  .stage-setup { max-height: calc(100vh - 200px); max-height: calc(100dvh - 200px); }
+  .enemy-config-list .enemy-config-card,
+  .enemy-config-list .enemy-config-card + .enemy-config-card {
+    flex-basis: 152px;
+    height: 152px;
+    min-height: 152px;
+    grid-template-columns: 44px minmax(0,1fr);
+    gap: 4px 7px;
+    padding: 7px;
+  }
+  .enemy-config-list .enemy-preview-portrait { width: 42px; height: 42px; }
+  .enemy-config-list .enemy-preview-drone { --drone-scale: .54; }
+  .enemy-config-list .unit-stats span { font-size: .44rem; padding: 2px 3px; }
+  .enemy-config-list .count-label { font-size: .43rem; }
+  .enemy-config-list .count-hint { font-size: .42rem; }
+}
+
+/* Distinguishable silhouettes, not just fourteen different paint jobs. */
+/* Scout is a pointed interceptor; Hunter is a diamond; Feint is a faceted hex. */
+.enemy-drone.enemy-scout { border-radius: 35% 35% 50% 50%; clip-path: polygon(50% 0,88% 26%,100% 72%,50% 100%,0 72%,12% 26%); }
+.enemy-drone.enemy-hunter { border-radius: 11px; }
+.enemy-drone.enemy-feint { clip-path: polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%); }
+/* Reaper's split scythe crest and Photon’s near-perfect sphere. */
+.enemy-drone.enemy-reaper { border-radius: 35% 50% 35% 50%; transform-origin: center; }
+.enemy-drone.enemy-photon { border-radius: 50%; box-shadow: inset 0 0 0 5px rgba(236,220,255,.12), 0 0 14px rgba(194,122,255,.98), 0 0 30px rgba(142,54,255,.82); }
+/* Dash points forward; Zigzag gets asymmetric corners; Fade is ghostly and translucent. */
+.enemy-drone.enemy-dash { border-radius: 12% 12% 35% 35%; }
+.enemy-drone.enemy-zigzag { border-radius: 22% 52% 20% 47%; }
+.enemy-drone.enemy-fade { border-style: dashed; border-radius: 45% 45% 35% 35%; }
+/* Devil horns, Soul's wisp tail, and Fox-family ears / front guard plate. */
+.enemy-drone.enemy-devil:not(.is-exploding)::before,
+.enemy-drone.enemy-devil:not(.is-exploding)::after {
+  content: "";
+  position: absolute;
+  top: -9px;
+  width: 12px;
+  height: 17px;
+  background: #ffb36a;
+  border: 1px solid #fff0c9;
+  clip-path: polygon(50% 0,100% 100%,0 72%);
+  z-index: -1;
+}
+.enemy-drone.enemy-devil:not(.is-exploding)::before { left: 3px; transform: rotate(-18deg); }
+.enemy-drone.enemy-devil:not(.is-exploding)::after { right: 3px; transform: rotate(18deg) scaleX(-1); }
+.enemy-drone.enemy-devil { border-radius: 38% 38% 48% 48%; box-shadow: inset 0 0 0 3px rgba(255,180,65,.28),0 0 12px #ff4b24,0 0 30px rgba(255,36,20,.72); }
+.enemy-drone.enemy-devil.is-angry { animation: devil-rage-pulse 180ms linear infinite alternate; filter: drop-shadow(0 0 12px #ff2600); }
+@keyframes devil-rage-pulse { from { filter:brightness(1.1) drop-shadow(0 0 7px #ff2600); } to { filter:brightness(1.8) drop-shadow(0 0 18px #ff7a00); } }
+.enemy-drone.enemy-soul { border-radius: 50% 50% 24% 24%; clip-path: polygon(0 0,100% 0,100% 75%,75% 100%,50% 81%,25% 100%,0 75%); }
+.enemy-drone.enemy-fox:not(.is-exploding)::before,
+.enemy-drone.enemy-fox:not(.is-exploding)::after,
+.enemy-drone.enemy-acidfox:not(.is-exploding)::before,
+.enemy-drone.enemy-acidfox:not(.is-exploding)::after {
+  content: "";
+  position: absolute;
+  top: -7px;
+  width: 13px;
+  height: 18px;
+  background: linear-gradient(135deg,#fff4d6,#e6a14f 55%,#713a18);
+  border: 1px solid rgba(255,239,199,.88);
+  clip-path: polygon(50% 0,100% 100%,0 78%);
+  z-index: -1;
+}
+.enemy-drone.enemy-fox:not(.is-exploding)::before,
+.enemy-drone.enemy-acidfox:not(.is-exploding)::before { left: 3px; transform: rotate(-14deg); }
+.enemy-drone.enemy-fox:not(.is-exploding)::after,
+.enemy-drone.enemy-acidfox:not(.is-exploding)::after { right: 3px; transform: rotate(14deg) scaleX(-1); }
+.enemy-drone.enemy-fox .drone-ring,
+.enemy-drone.enemy-acidfox .drone-ring { inset: 4px 3px; border-width: 2px; border-radius: 5px; transform: rotate(var(--enemy-facing-angle,0deg)); }
+.enemy-drone.enemy-fox .drone-eye { border-radius: 35% 35% 50% 50%; width: 10px; height: 14px; }
+.enemy-drone.enemy-acidfox { border-width: 3px; border-style: double; }
+.enemy-drone.enemy-acidfox .drone-eye { width: 15px; height: 7px; border-radius: 45%; }
+.enemy-drone.enemy-acidfox .drone-light { width: 6px; height: 6px; }
+.enemy-drone.is-guarding { box-shadow: 0 0 0 6px rgba(255,255,255,.78),0 0 20px rgba(255,235,175,.9); filter:brightness(1.6); }
+.enemy-drone.enemy-fade:not(.is-exploding)::after { content:""; position:absolute; inset:-5px; border:1px dotted rgba(203,187,255,.9); border-radius:50%; }
+.enemy-drone.enemy-zigzag .drone-ring { transform: rotate(65deg); }
+.enemy-drone.enemy-tank .drone-eye { border-radius:3px; width:9px; height:9px; }
+.enemy-drone.enemy-photon .drone-eye { width:8px; height:8px; border-radius:1px; }
+.enemy-drone.enemy-dash .drone-ring { transform: rotate(45deg); border-radius:20%; }
+.enemy-drone.enemy-devil .drone-ring { border-radius:4px; border-width:2px; }
+.enemy-drone.enemy-soul .drone-eye { width:8px; height:12px; border-radius:45% 45% 55% 55%; }
+.enemy-projectile.enemy-poison-projectile { filter:none; border:2px solid #b7ff66; border-radius:50% 12% 50% 12%; background:radial-gradient(circle at 35% 35%,#fff 0 8%,#c9ff7d 16%,#58b62a 58%,#183a0c 100%); box-shadow:0 0 8px #a6ff52,0 0 18px rgba(103,255,53,.7); }
+.enemy-projectile.enemy-poison-projectile .projectile-rotor { display:none; }
+.enemy-projectile.enemy-poison-projectile::before { content:""; position:absolute; inset:5px; border:1px solid rgba(255,255,255,.85); border-radius:45%; transform:rotate(35deg); }
