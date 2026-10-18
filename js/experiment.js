@@ -37,7 +37,8 @@
     devil: { value: document.querySelector("#enemy-devil-count-value"), decrease: document.querySelector("#enemy-devil-count-decrease"), increase: document.querySelector("#enemy-devil-count-increase") },
     soul: { value: document.querySelector("#enemy-soul-count-value"), decrease: document.querySelector("#enemy-soul-count-decrease"), increase: document.querySelector("#enemy-soul-count-increase") },
     fox: { value: document.querySelector("#enemy-fox-count-value"), decrease: document.querySelector("#enemy-fox-count-decrease"), increase: document.querySelector("#enemy-fox-count-increase") },
-    acidfox: { value: document.querySelector("#enemy-acidfox-count-value"), decrease: document.querySelector("#enemy-acidfox-count-decrease"), increase: document.querySelector("#enemy-acidfox-count-increase") }
+    acidfox: { value: document.querySelector("#enemy-acidfox-count-value"), decrease: document.querySelector("#enemy-acidfox-count-decrease"), increase: document.querySelector("#enemy-acidfox-count-increase") },
+    chameleon: { value: document.querySelector("#enemy-chameleon-count-value"), decrease: document.querySelector("#enemy-chameleon-count-decrease"), increase: document.querySelector("#enemy-chameleon-count-increase") }
   };
   const gameStartButton = document.querySelector("#game-start-button");
 
@@ -79,16 +80,17 @@
     fade: { hp: 4, points: 1200, speed: 1.35, turnChance: 0.35, behavior: "fade" },
     devil: { hp: Infinity, points: 2500, speed: 0.7, behavior: "devil", ignoresSoftBlocks: true, angerSpeed: 3 },
     soul: { hp: 2, points: 100, speed: 1.2, turnChance: 0.34, behavior: "soul", ignoresSoftBlocks: true },
-    fox: { hp: 4, points: 1600, speed: 1.3, turnChance: 0.60, behavior: "fox", guardsFront: true },
-    acidfox: { hp: 8, points: 6400, speed: 1.5, turnChance: 0.90, behavior: "acidfox", guardsFront: true, poisonAttack: true }
+    fox: { hp: 3, points: 1600, speed: 1.3, turnChance: 0.60, behavior: "fox", guardsFront: true },
+    acidfox: { hp: 5, points: 6400, speed: 1.5, turnChance: 0.90, behavior: "acidfox", guardsFront: true, poisonAttack: true },
+    chameleon: { hp: 2, points: 800, speed: 1, turnChance: 0.30, behavior: "chameleon" }
   };
-  const configuredEnemyCounts = { drone: 3, tank: 0, scout: 0, hunter: 0, feint: 0, photon: 0, reaper: 0, dash: 0, zigzag: 0, fade: 0, devil: 0, soul: 0, fox: 0, acidfox: 0 };
+  const configuredEnemyCounts = { drone: 3, tank: 0, scout: 0, hunter: 0, feint: 0, photon: 0, reaper: 0, dash: 0, zigzag: 0, fade: 0, devil: 0, soul: 0, fox: 0, acidfox: 0, chameleon: 0 };
   const MAX_TOTAL_ENEMIES = 20;
   const ENEMY_COUNT_LIMITS = {
     drone: { min: 0, max: 8 }, tank: { min: 0, max: 8 }, scout: { min: 0, max: 8 },
     hunter: { min: 0, max: 8 }, feint: { min: 0, max: 8 }, photon: { min: 0, max: 8 },
     reaper: { min: 0, max: 8 }, dash: { min: 0, max: 8 }, zigzag: { min: 0, max: 8 }, fade: { min: 0, max: 8 },
-    devil: { min: 0, max: 3 }, soul: { min: 0, max: 8 }, fox: { min: 0, max: 8 }, acidfox: { min: 0, max: 8 }
+    devil: { min: 0, max: 3 }, soul: { min: 0, max: 8 }, fox: { min: 0, max: 8 }, acidfox: { min: 0, max: 8 }, chameleon: { min: 0, max: 8 }
   };
   let gameStarted = false;
   const enemyUnits = [];
@@ -200,8 +202,8 @@
         element.classList.remove(
           "enemy-tank", "enemy-scout", "enemy-hunter", "enemy-feint", "enemy-photon",
           "enemy-reaper", "enemy-dash", "enemy-zigzag", "enemy-fade",
-          "enemy-devil", "enemy-soul", "enemy-fox", "enemy-acidfox",
-          "is-exploding", "is-angry", "is-guarding", "tank-hp-3", "tank-hp-2", "tank-hp-1"
+          "enemy-devil", "enemy-soul", "enemy-fox", "enemy-acidfox", "enemy-chameleon",
+          "is-exploding", "is-angry", "is-guarding", "is-disguised", "tank-hp-3", "tank-hp-2", "tank-hp-1"
         );
         if (typeKey !== "drone") element.classList.add("enemy-" + typeKey);
         element.hidden = false;
@@ -215,7 +217,10 @@
           points: type.points, speed: type.speed,
           nextShotAt: performance.now() + (typeKey === "acidfox" ? ACID_POISON_MIN_MS + Math.random() * (ACID_POISON_MAX_MS - ACID_POISON_MIN_MS) : 1800 + Math.random() * 1800),
           alerting: false,
-          angry: false
+          angry: false,
+          nextDisguiseAt: performance.now() + 15000,
+          disguisedUntil: 0,
+          disguised: false
         };
         element.addEventListener("animationend", event => {
           if (event.animationName === "enemy-drone-explode" && !unit.alive) element.hidden = true;
@@ -273,7 +278,10 @@
       unit.hp = unit.type.hp;
       unit.speed = unit.type.speed;
       unit.angry = false;
-      unit.element.classList.remove("is-angry", "is-guarding");
+      unit.disguised = false;
+      unit.disguisedUntil = 0;
+      unit.nextDisguiseAt = performance.now() + 15000;
+      unit.element.classList.remove("is-angry", "is-guarding", "is-disguised");
       unit.nextShotAt = performance.now() + (unit.typeKey === "acidfox" ? ACID_POISON_MIN_MS + Math.random() * (ACID_POISON_MAX_MS - ACID_POISON_MIN_MS) : 1800 + Math.random() * 1800);
       unit.alerting = false;
       unit.element.hidden = false;
@@ -370,7 +378,7 @@
 
   function chooseStrategicDirection(unit, cellWidth, cellHeight) {
     const behavior = unit.type.behavior;
-    if (!["chase", "flee", "devil", "soul", "fox", "acidfox"].includes(behavior)) return null;
+    if (!["chase", "flee", "devil", "fox", "acidfox"].includes(behavior)) return null;
     const playerCell = getPlayerGridCell(cellWidth, cellHeight);
     if (!playerCell) return null;
     const distances = getReachableCellDistances(playerCell.row, playerCell.col, unit);
@@ -413,8 +421,22 @@
     return true;
   }
 
+  function updateChameleonState(unit, time) {
+    if (unit.typeKey !== "chameleon") return;
+    if (!unit.disguised && time >= unit.nextDisguiseAt) {
+      unit.disguised = true;
+      unit.disguisedUntil = time + 10000;
+      unit.nextDisguiseAt = time + 15000;
+      unit.element.classList.add("is-disguised");
+    } else if (unit.disguised && time >= unit.disguisedUntil) {
+      unit.disguised = false;
+      unit.element.classList.remove("is-disguised");
+    }
+  }
+
   function updateEnemy(unit, delta, time = performance.now()) {
     if (!unit.alive) return;
+    updateChameleonState(unit, time);
     const cellWidth = arena.clientWidth / GRID_COLUMNS;
     const cellHeight = arena.clientHeight / GRID_ROWS;
     const playerCell = getPlayerGridCell(cellWidth, cellHeight);
@@ -1163,8 +1185,10 @@
 
   function explodeEnemy(unit) {
     if (!unit.alive) return;
+    if (unit.typeKey === "chameleon" && unit.disguised) return;
     if (unit.typeKey === "devil") {
-      if (unit.angry) return;
+      const hasSoulAlive = soulCountAtStart > 0 && enemyUnits.some(enemy => enemy.typeKey === "soul" && enemy.alive);
+      if (unit.angry || !hasSoulAlive) return;
       unit.angry = true;
       unit.element.classList.add("is-angry");
       const playerCell = getPlayerGridCell(arena.clientWidth / GRID_COLUMNS, arena.clientHeight / GRID_ROWS);
@@ -1193,7 +1217,9 @@
         projectile.active = false;
         renderProjectile();
         const frontDot = unit.directionX * (projectile.x - unit.x) + unit.directionY * (projectile.y - unit.y);
-        if (unit.type.guardsFront && frontDot > 0) {
+        if (unit.typeKey === "chameleon" && unit.disguised) {
+          // A disguised chameleon absorbs the attack without losing HP.
+        } else if (unit.type.guardsFront && frontDot > 0) {
           unit.element.classList.add("is-guarding");
           window.setTimeout(() => unit.element.classList.remove("is-guarding"), 240);
         } else {
@@ -1357,20 +1383,26 @@
     arena.focus({ preventScroll: true });
   }
 
-  for (const typeKey of Object.keys(ENEMY_TYPES)) {
-    const controls = enemyCountControls[typeKey];
+  stageSetup.addEventListener("click", event => {
+    const target = event.target instanceof Element ? event.target : null;
+    const button = target?.closest(".quantity-button");
+    if (!button || !stageSetup.contains(button)) return;
+    const entry = Object.entries(enemyCountControls).find(([, controls]) =>
+      controls.increase === button || controls.decrease === button
+    );
+    if (!entry) return;
+    const [typeKey, controls] = entry;
     const limits = ENEMY_COUNT_LIMITS[typeKey];
-    controls.decrease.addEventListener("click", () => {
-      configuredEnemyCounts[typeKey] = Math.max(limits.min, configuredEnemyCounts[typeKey] - 1);
-      renderEnemyCountControls();
-    });
-    controls.increase.addEventListener("click", () => {
-      const total = Object.values(configuredEnemyCounts).reduce((sum, n) => sum + n, 0);
+    if (controls.increase === button) {
+      const total = Object.values(configuredEnemyCounts).reduce((sum, value) => sum + value, 0);
       if (total < MAX_TOTAL_ENEMIES) configuredEnemyCounts[typeKey] = Math.min(limits.max, configuredEnemyCounts[typeKey] + 1);
-      renderEnemyCountControls();
-    });
-  }
-  gameStartButton.addEventListener("click", startGame);
+    } else {
+      configuredEnemyCounts[typeKey] = Math.max(limits.min, configuredEnemyCounts[typeKey] - 1);
+    }
+    renderEnemyCountControls();
+  });
+
+    gameStartButton.addEventListener("click", startGame);
   renderEnemyCountControls();
 
   restartButton.addEventListener("click", restartGame);
