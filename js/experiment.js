@@ -89,12 +89,31 @@
     player.style.top = `${y}px`;
   }
 
+  // Stage layout: 1 = hard block, 0 = walkable. The perimeter is always blocked.
+  const STAGE_MAP = [
+    "11111111111111111111111",
+    "10101010101010101010101",
+    "10000000000000000000001",
+    "10101010101010101010101",
+    "10000000000000000000001",
+    "10101010101010101010101",
+    "10000000000000000000001",
+    "10101010101010101010101",
+    "10000000000000000000001",
+    "10101010101010101010101",
+    "11111111111111111111111"
+  ];
+  const hardBlockCells = [];
+
   function buildHardBlocks() {
     const fragment = document.createDocumentFragment();
+    hardBlockCells.length = 0;
+
     for (let row = 0; row < GRID_ROWS; row += 1) {
       for (let col = 0; col < GRID_COLUMNS; col += 1) {
-        const isBorder = row === 0 || row === GRID_ROWS - 1 || col === 0 || col === GRID_COLUMNS - 1;
-        if (!isBorder) continue;
+        if (STAGE_MAP[row][col] !== "1") continue;
+        hardBlockCells.push({ row, col });
+
         const block = document.createElement("div");
         const variant = (row * 7 + col * 3 + row * col) % 4;
         block.className = "hard-block hard-block--" + variant;
@@ -104,6 +123,34 @@
       }
     }
     stageBlocks.replaceChildren(fragment);
+  }
+
+  function collidesWithHardBlock(centerX, centerY) {
+    const cellWidth = arena.clientWidth / GRID_COLUMNS;
+    const cellHeight = arena.clientHeight / GRID_ROWS;
+    const left = centerX - playerRadius.x;
+    const right = centerX + playerRadius.x;
+    const top = centerY - playerRadius.y;
+    const bottom = centerY + playerRadius.y;
+
+    return hardBlockCells.some(({ row, col }) => {
+      const blockLeft = col * cellWidth;
+      const blockRight = blockLeft + cellWidth;
+      const blockTop = row * cellHeight;
+      const blockBottom = blockTop + cellHeight;
+      return right > blockLeft && left < blockRight &&
+        bottom > blockTop && top < blockBottom;
+    });
+  }
+
+  function movePlayer(dx, dy, delta) {
+    const nextX = x + dx * speed * delta;
+    const nextY = y + dy * speed * delta;
+
+    // Resolve each axis separately so the player can slide along a wall.
+    if (!collidesWithHardBlock(nextX, y)) x = nextX;
+    if (!collidesWithHardBlock(x, nextY)) y = nextY;
+    keepInsideArena();
   }
 
   function renderProjectile() {
@@ -271,9 +318,7 @@
       // One axis moves at a time, so a side wall cannot block vertical travel.
       facingX = dx;
       facingY = dy;
-      x += dx * speed * delta;
-      y += dy * speed * delta;
-      keepInsideArena();
+      movePlayer(dx, dy, delta);
 
       player.classList.add("is-moving");
       player.classList.toggle("moving-left", dx < 0);
@@ -298,9 +343,10 @@
   buildHardBlocks();
   fitPlayerToGrid();
 
-  // Start at the center of the bottom walkable row, above the hard-block border.
+  // Start in a walkable cell on the bottom interior row (column 10, zero-based).
+  const cellWidth = arena.clientWidth / GRID_COLUMNS;
   const cellHeight = arena.clientHeight / GRID_ROWS;
-  x = arena.clientWidth / 2;
+  x = cellWidth * 10.5;
   y = arena.clientHeight - cellHeight * 1.5;
   keepInsideArena();
   renderPlayer();
