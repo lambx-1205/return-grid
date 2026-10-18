@@ -316,8 +316,10 @@ h1 span {
 @media (prefers-reduced-motion: reduce) {
   .player.is-moving .player-body { animation: none; }
   .player-trail { transition: none; }
-  .projectile-rotor { animation-duration: 1.5s; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+  /* Rotation is a core projectile cue, so keep it visibly continuous. */
+  .projectile-rotor { animation-duration: 420ms !important; animation-iteration-count: infinite !important; animation-timing-function: linear !important; }
+  .projectile[data-mode="turn"] .projectile-rotor { animation-duration: 260ms !important; }
 }
 
 
@@ -662,40 +664,23 @@ h1 span {
 .projectile-rotor {
   position: absolute;
   inset: 0;
+  transform-origin: 50% 50%;
   animation: boomerang-spin 420ms linear infinite;
+  will-change: transform;
 }
 
-.projectile-blade {
+.projectile-arm {
   position: absolute;
-  inset: 1px;
-  clip-path: polygon(4% 7%, 43% 31%, 96% 1%, 76% 53%, 100% 97%, 49% 69%, 5% 96%, 26% 51%);
-  background: linear-gradient(135deg, #eaffff 0%, #8ffcf4 20%, #42eadf 45%, #297bd0 72%, #17409b 100%);
-  filter: drop-shadow(0 0 4px rgba(66,245,233,.62));
+  top: 2px;
+  width: 8px;
+  height: 26px;
+  border: 1px solid rgba(212, 255, 255, .94);
+  border-radius: 5px 5px 2px 2px;
+  background: linear-gradient(90deg, #2877b8 0%, #a7fff6 40%, #42eadf 68%, #2366d9 100%);
+  box-shadow: inset 0 0 4px rgba(255,255,255,.62), 0 0 5px rgba(66,245,233,.42);
 }
-
-.projectile-blade-glint {
-  position: absolute;
-  top: 5px;
-  left: 5px;
-  width: 13px;
-  height: 3px;
-  border-radius: 3px;
-  background: rgba(255,255,255,.9);
-  box-shadow: 0 0 5px rgba(255,255,255,.8);
-  transform: rotate(26deg);
-}
-
-.projectile-blade-tip {
-  position: absolute;
-  top: 1px;
-  right: 3px;
-  width: 5px;
-  height: 8px;
-  border-radius: 4px 4px 2px 2px;
-  background: linear-gradient(180deg, #fff0ff, #ff4fd8 68%, #b222a0);
-  box-shadow: 0 0 7px rgba(255,79,216,.85);
-  transform: rotate(32deg);
-}
+.projectile-arm-left { left: 5px; transform: rotate(-34deg); }
+.projectile-arm-right { right: 5px; transform: rotate(34deg); }
 
 .projectile-core {
   position: absolute;
