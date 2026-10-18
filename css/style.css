@@ -398,17 +398,34 @@ h1 span {
 .arena-hud {
   position: relative;
   z-index: 1;
-  min-width: 86px;
   padding: 8px 11px;
-  display: grid;
-  grid-template-columns: auto auto;
+  display: flex;
   align-items: center;
-  gap: 2px 9px;
+  gap: 14px;
   border: 1px solid rgba(255, 83, 111, .52);
   border-radius: 7px;
   background: rgba(8, 7, 18, .84);
   box-shadow: 0 0 16px rgba(255, 30, 67, .12);
   backdrop-filter: blur(5px);
+}
+.score-display {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.life-display {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding-left: 13px;
+  border-left: 1px solid rgba(255, 83, 111, .32);
+}
+.life-main {
+  display: flex;
+  align-items: center;
+  gap: 9px;
 }
 .score-label {
   color: #8cfbe9;
@@ -438,7 +455,6 @@ h1 span {
   text-shadow: 0 0 10px rgba(255, 41, 77, .8);
 }
 .life-icons {
-  grid-column: 1 / -1;
   color: #ff3d5c;
   font-size: .62rem;
   letter-spacing: .08em;
