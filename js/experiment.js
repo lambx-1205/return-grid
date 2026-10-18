@@ -4,11 +4,12 @@
 (() => {
   const arena = document.querySelector("#game-arena");
   const player = document.querySelector("#player");
+  const enemyDrone = document.querySelector("#enemy-drone");
   const stageBlocks = document.querySelector("#stage-blocks");
   const projectileElement = document.querySelector("#projectile");
   const movementStatus = document.querySelector("#movement-status");
 
-  if (!arena || !player || !stageBlocks || !projectileElement || !movementStatus) {
+  if (!arena || !player || !enemyDrone || !stageBlocks || !projectileElement || !movementStatus) {
     console.error("RETURN GRID: required movement-stage elements were not found.");
     return;
   }
@@ -25,6 +26,11 @@
   const PLAYER_BASE_SIZE = 60;
   const playerRadius = { x: PLAYER_BASE_SIZE / 2, y: PLAYER_BASE_SIZE / 2 };
   const speed = 160; // CSS pixels per second.
+  const ENEMY_BASE_SIZE = 42;
+  const ENEMY_SPEED = 72;
+  let enemyX = 0;
+  let enemyY = 0;
+  let enemyDirection = -1;
   const PROJECTILE_SIZE = 40;
   const PROJECTILE_SPEED = 300;
   const PROJECTILE_RETURN_SPEED = 340;
@@ -59,6 +65,45 @@
     const desiredSize = Math.min(cellWidth, cellHeight) * PLAYER_CELL_FRACTION;
     const scale = desiredSize / PLAYER_BASE_SIZE;
     player.style.setProperty("--player-scale", String(scale));
+  }
+
+  function fitEnemyToGrid() {
+    const cellWidth = arena.clientWidth / GRID_COLUMNS;
+    const cellHeight = arena.clientHeight / GRID_ROWS;
+    const desiredSize = Math.min(cellWidth, cellHeight) * 0.72;
+    enemyDrone.style.setProperty("--drone-scale", String(desiredSize / ENEMY_BASE_SIZE));
+  }
+
+  function placeEnemyAtStart() {
+    const cellWidth = arena.clientWidth / GRID_COLUMNS;
+    const cellHeight = arena.clientHeight / GRID_ROWS;
+    // Top-right walkable cell, just inside the hard-block perimeter.
+    enemyX = arena.clientWidth - cellWidth * 1.5;
+    enemyY = cellHeight * 1.5;
+    enemyDirection = -1;
+    renderEnemy();
+  }
+
+  function renderEnemy() {
+    enemyDrone.style.left = `${enemyX}px`;
+    enemyDrone.style.top = `${enemyY}px`;
+  }
+
+  function updateEnemy(delta) {
+    const cellWidth = arena.clientWidth / GRID_COLUMNS;
+    // Patrol horizontally along the open row immediately below the top border.
+    const minX = cellWidth * 1.5;
+    const maxX = arena.clientWidth - cellWidth * 1.5;
+    enemyX += enemyDirection * ENEMY_SPEED * delta;
+
+    if (enemyX <= minX) {
+      enemyX = minX;
+      enemyDirection = 1;
+    } else if (enemyX >= maxX) {
+      enemyX = maxX;
+      enemyDirection = -1;
+    }
+    renderEnemy();
   }
 
   function bounds() {
@@ -339,6 +384,7 @@
       movementStatus.textContent = "STANDBY";
     }
 
+    updateEnemy(delta);
     updateProjectile(delta);
     renderPlayer();
     window.requestAnimationFrame(frame);
@@ -346,6 +392,7 @@
 
   buildHardBlocks();
   fitPlayerToGrid();
+  fitEnemyToGrid();
 
   // Start in a walkable cell on the bottom interior row (column 10, zero-based).
   const cellWidth = arena.clientWidth / GRID_COLUMNS;
@@ -353,6 +400,7 @@
   x = cellWidth * 9.5;
   y = arena.clientHeight - cellHeight * 1.5;
   keepInsideArena();
+  placeEnemyAtStart();
   renderPlayer();
   renderProjectile();
 
@@ -361,7 +409,13 @@
   window.addEventListener("blur", clearKeys);
   window.addEventListener("resize", () => {
     fitPlayerToGrid();
+    fitEnemyToGrid();
     keepInsideArena();
+    const cellWidth = arena.clientWidth / GRID_COLUMNS;
+    const cellHeight = arena.clientHeight / GRID_ROWS;
+    enemyY = cellHeight * 1.5;
+    enemyX = Math.min(arena.clientWidth - cellWidth * 1.5, Math.max(cellWidth * 1.5, enemyX));
+    renderEnemy();
     renderPlayer();
   });
 
