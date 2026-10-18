@@ -20,11 +20,63 @@
       <div class="stage-heading">
         <div>
           <div class="eyebrow"><span class="eyebrow-line"></span> EXPERIMENT / STAGE 00</div>
-          <h1 id="stage-title">TEST <span>AREA</span></h1>
+          <h1 id="stage-title">STAGE <span>SETUP</span></h1>
         </div>
-        <div class="stage-badge"><span class="status-dot"></span> GRID 23 × 11</div>
+        <div id="stage-badge" class="stage-badge"><span class="status-dot"></span> CONFIG MODE</div>
       </div>
 
+      <section id="stage-setup" class="stage-setup" aria-labelledby="setup-heading">
+        <div class="setup-panel">
+          <div class="setup-panel-header">
+            <div>
+              <span class="setup-index">CONFIGURATION / 01</span>
+              <h2 id="setup-heading">ENEMY <span>CONFIGURATION</span></h2>
+            </div>
+            <span class="setup-availability"><span class="status-dot"></span> 1 TYPE AVAILABLE</span>
+          </div>
+          <p class="setup-description">出現させる敵ユニットと配備数を指定して、実験を開始する。</p>
+
+          <div class="enemy-config-card">
+            <div class="enemy-preview-portrait">
+              <div class="enemy-drone enemy-preview-drone" role="img" aria-label="敵キャラクター、ドローン">
+                <span class="drone-aura" aria-hidden="true"></span>
+                <span class="drone-ring" aria-hidden="true"></span>
+                <span class="drone-eye" aria-hidden="true"></span>
+                <span class="drone-light drone-light-left" aria-hidden="true"></span>
+                <span class="drone-light drone-light-right" aria-hidden="true"></span>
+              </div>
+            </div>
+            <div class="enemy-preview-text">
+              <span class="unit-index">ENEMY TYPE / 01</span>
+              <h3>DRONE</h3>
+              <p>Autonomous patrol unit</p>
+              <div class="unit-stats" aria-label="ドローンの性能">
+                <span>HP <strong>1</strong></span>
+                <span>SCORE <strong>100</strong></span>
+                <span>SPEED <strong>×1</strong></span>
+              </div>
+            </div>
+            <div class="enemy-count-control">
+              <label class="count-label" for="enemy-count-value">DEPLOYMENT COUNT</label>
+              <div class="quantity-stepper">
+                <button id="enemy-count-decrease" class="quantity-button" type="button" aria-label="敵の数を減らす">−</button>
+                <output id="enemy-count-value" aria-live="polite">3</output>
+                <button id="enemy-count-increase" class="quantity-button" type="button" aria-label="敵の数を増やす">+</button>
+              </div>
+              <span class="count-hint">MIN 1 <span aria-hidden="true">/</span> MAX 8 UNITS</span>
+            </div>
+          </div>
+
+          <div class="setup-panel-footer">
+            <span class="setup-ready"><span class="status-dot"></span> SYSTEM READY / AWAITING INPUT</span>
+            <button id="game-start-button" class="primary-button setup-start-button" type="button">
+              <span>game start</span><span class="button-arrow" aria-hidden="true">→</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <div id="gameplay-view" class="gameplay-view" hidden>
       <div class="arena-hud-row">
         <div class="arena-hud" aria-live="polite">
           <div class="score-display">
@@ -109,6 +161,7 @@
         </div>
         <button id="restart-button" class="secondary-button restart-button" type="button">↻ RESTART</button>
         <a class="secondary-button stage-back-button" href="main.html"><span aria-hidden="true">←</span> メニュー</a>
+      </div>
       </div>
     </section>
 
