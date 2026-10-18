@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#080b18">
   <title>RETURN GRID | Movement Test</title>
-  <link rel="stylesheet" href="css/style.css?v=20261018-selection-lag-fix">
-  <script src="js/experiment.js?v=20261018-selection-lag-fix" defer></script>
+  <link rel="stylesheet" href="css/style.css?v=20261018-soft-block-cooldown">
+  <script src="js/experiment.js?v=20261018-soft-block-cooldown" defer></script>
 </head>
 <body class="page page-experiment">
   <div class="scanlines" aria-hidden="true"></div>
@@ -89,6 +89,12 @@
               <strong id="life-count">5</strong>
             </div>
             <span class="life-icons" id="life-icons" aria-hidden="true">● ● ● ● ●</span>
+          </div>
+          <div id="attack-cooldown" class="attack-cooldown is-ready" role="timer" aria-label="攻撃可能">
+            <div id="attack-cooldown-ring" class="attack-cooldown__ring">
+              <span id="attack-cooldown-value" class="attack-cooldown__value">GO</span>
+            </div>
+            <span class="attack-cooldown__label">ATTACK</span>
           </div>
         </div>
       </div>
