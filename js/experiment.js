@@ -502,8 +502,117 @@
     stageBlocks.replaceChildren(fragment);
   }
 
+  function getBaseFloorNeighbors(row, col) {
+    return ENEMY_DIRECTIONS
+      .map(direction => ({ row: row + direction.y, col: col + direction.x }))
+      .filter(cell =>
+        cell.row > 0 && cell.row < GRID_ROWS - 1 &&
+        cell.col > 0 && cell.col < GRID_COLUMNS - 1 &&
+        STAGE_MAP[cell.row][cell.col] === "0"
+      );
+  }
+
+  function countBaseFloorNeighbors(row, col) {
+    return getBaseFloorNeighbors(row, col).length;
+  }
+
+  function wouldCreateThreeInARow(row, col, candidateKey) {
+    const isBlocked = (checkRow, checkCol) => {
+      const key = cellKey(checkRow, checkCol);
+      return key === candidateKey || softBlockCells.has(key);
+    };
+
+    // Three consecutive blocks in a one-cell lane feel like a sealed wall.
+    for (const [dy, dx] of [[0, 1], [1, 0]]) {
+      for (let offset = -2; offset <= 0; offset += 1) {
+        let allBlocked = true;
+        for (let step = 0; step < 3; step += 1) {
+          const checkRow = row + (offset + step) * dy;
+          const checkCol = col + (offset + step) * dx;
+          if (
+            checkRow <= 0 || checkRow >= GRID_ROWS - 1 ||
+            checkCol <= 0 || checkCol >= GRID_COLUMNS - 1 ||
+            STAGE_MAP[checkRow][checkCol] !== "0" ||
+            !isBlocked(checkRow, checkCol)
+          ) {
+            allBlocked = false;
+            break;
+          }
+        }
+        if (allBlocked) return true;
+      }
+    }
+    return false;
+  }
+
+  function keepsFloorConnected(candidateKey) {
+    let startCell = null;
+    let totalOpenCells = 0;
+
+    for (let row = 1; row < GRID_ROWS - 1; row += 1) {
+      for (let col = 1; col < GRID_COLUMNS - 1; col += 1) {
+        if (STAGE_MAP[row][col] !== "0") continue;
+        const key = cellKey(row, col);
+        if (key === candidateKey || softBlockCells.has(key)) continue;
+        totalOpenCells += 1;
+        if (!startCell) startCell = { row, col };
+      }
+    }
+    if (!startCell) return false;
+
+    const visited = new Set([cellKey(startCell.row, startCell.col)]);
+    const queue = [startCell];
+    for (let index = 0; index < queue.length; index += 1) {
+      const current = queue[index];
+      for (const neighbor of getBaseFloorNeighbors(current.row, current.col)) {
+        const key = cellKey(neighbor.row, neighbor.col);
+        if (key === candidateKey || softBlockCells.has(key) || visited.has(key)) continue;
+        visited.add(key);
+        queue.push(neighbor);
+      }
+    }
+    return visited.size === totalOpenCells;
+  }
+
+  function canPlaceSoftBlock(cell, currentClusterKeys) {
+    const { row, col } = cell;
+    const candidateKey = cellKey(row, col);
+
+    if (STAGE_MAP[row][col] !== "0" || softBlockCells.has(candidateKey)) return false;
+    // Intersections remain open. Blocks belong on corridor cells, not at decision points.
+    if (countBaseFloorNeighbors(row, col) !== 2) return false;
+
+    // Keep a small clear pocket around the player's spawn.
+    if (Math.abs(row - 1) + Math.abs(col - 1) <= 2) return false;
+
+    // Separate clusters from one another; only the current small cluster may touch this tile.
+    for (const neighbor of getBaseFloorNeighbors(row, col)) {
+      const neighborKey = cellKey(neighbor.row, neighbor.col);
+      if (softBlockCells.has(neighborKey) && !currentClusterKeys.has(neighborKey)) {
+        return false;
+      }
+    }
+
+    if (wouldCreateThreeInARow(row, col, candidateKey)) return false;
+
+    // Preserve at least two open exits at every intersection.
+    for (let checkRow = 1; checkRow < GRID_ROWS - 1; checkRow += 1) {
+      for (let checkCol = 1; checkCol < GRID_COLUMNS - 1; checkCol += 1) {
+        if (STAGE_MAP[checkRow][checkCol] !== "0") continue;
+        if (countBaseFloorNeighbors(checkRow, checkCol) < 3) continue;
+        const openExits = getBaseFloorNeighbors(checkRow, checkCol).filter(exit => {
+          const exitKey = cellKey(exit.row, exit.col);
+          return exitKey !== candidateKey && !softBlockCells.has(exitKey);
+        }).length;
+        if (openExits < 2) return false;
+      }
+    }
+
+    // Do not let the accumulated random layout split the floor into disconnected regions.
+    return keepsFloorConnected(candidateKey);
+  }
+
   function generateSoftBlocks() {
-    // Remove intact and still-animating remnants before building the next layout.
     stageBlocks.querySelectorAll(".soft-block").forEach(element => element.remove());
     softBlockCells.clear();
 
@@ -514,18 +623,8 @@
       }
     }
 
-    // Generate a random density between roughly one quarter and one third of all floor.
-    const targetCount = Math.min(
-      floorCells.length - 1,
-      Math.max(1, Math.round(floorCells.length * (0.25 + Math.random() * 0.08)))
-    );
-
-    // Keep the spawn cell and its immediate neighborhood clear so the player can start moving.
-    const available = new Map(
-      floorCells
-        .filter(cell => Math.abs(cell.row - 1) + Math.abs(cell.col - 1) > 2)
-        .map(cell => [cellKey(cell.row, cell.col), cell])
-    );
+    // Stay near the lower end of the requested 25–33% range to reduce congestion.
+    const targetCount = Math.round(floorCells.length * (0.25 + Math.random() * 0.04));
     const fragment = document.createDocumentFragment();
 
     function addSoftBlock(cell) {
@@ -534,49 +633,54 @@
       element.dataset.hp = String(SOFT_BLOCK_HIT_POINTS);
       element.style.gridColumn = String(cell.col + 1);
       element.style.gridRow = String(cell.row + 1);
-      const block = { row: cell.row, col: cell.col, hp: SOFT_BLOCK_HIT_POINTS, element };
-      softBlockCells.set(cellKey(cell.row, cell.col), block);
-      available.delete(cellKey(cell.row, cell.col));
+      softBlockCells.set(cellKey(cell.row, cell.col), {
+        row: cell.row,
+        col: cell.col,
+        hp: SOFT_BLOCK_HIT_POINTS,
+        element
+      });
       fragment.appendChild(element);
-      return block;
     }
 
-    // Grow small connected patches instead of scattering every block independently.
-    while (softBlockCells.size < targetCount && available.size > 0) {
-      const separatedSeeds = Array.from(available.values()).filter(cell =>
-        !ENEMY_DIRECTIONS.some(direction =>
-          softBlockCells.has(cellKey(cell.row + direction.y, cell.col + direction.x))
-        )
-      );
-      const seedPool = separatedSeeds.length ? separatedSeeds : Array.from(available.values());
-      const seed = seedPool[Math.floor(Math.random() * seedPool.length)];
-      const clusterGoal = Math.min(
-        2 + Math.floor(Math.random() * 4),
-        targetCount - softBlockCells.size
-      );
+    // Build patches of two or three blocks, while all placement rules are checked per tile.
+    let attempts = 0;
+    while (softBlockCells.size < targetCount && attempts < floorCells.length * 8) {
+      attempts += 1;
+      const noCluster = new Set();
+      const seedCandidates = floorCells.filter(cell => canPlaceSoftBlock(cell, noCluster));
+      if (!seedCandidates.length) break;
+
+      const seed = seedCandidates[Math.floor(Math.random() * seedCandidates.length)];
       const cluster = [seed];
+      const clusterKeys = new Set([cellKey(seed.row, seed.col)]);
       addSoftBlock(seed);
 
+      const clusterGoal = Math.min(
+        2 + Math.floor(Math.random() * 2),
+        targetCount - softBlockCells.size + 1
+      );
+
       while (cluster.length < clusterGoal && softBlockCells.size < targetCount) {
-        const neighbors = new Map();
-        for (const cell of cluster) {
-          for (const direction of ENEMY_DIRECTIONS) {
-            const key = cellKey(cell.row + direction.y, cell.col + direction.x);
-            const neighbor = available.get(key);
-            if (neighbor) neighbors.set(key, neighbor);
+        const options = new Map();
+        for (const member of cluster) {
+          for (const neighbor of getBaseFloorNeighbors(member.row, member.col)) {
+            const key = cellKey(neighbor.row, neighbor.col);
+            if (clusterKeys.has(key)) continue;
+            if (canPlaceSoftBlock(neighbor, clusterKeys)) options.set(key, neighbor);
           }
         }
-        if (!neighbors.size) break;
-        const choices = Array.from(neighbors.values());
+        if (!options.size) break;
+
+        const choices = Array.from(options.values());
         const nextCell = choices[Math.floor(Math.random() * choices.length)];
         cluster.push(nextCell);
+        clusterKeys.add(cellKey(nextCell.row, nextCell.col));
         addSoftBlock(nextCell);
       }
     }
 
     stageBlocks.appendChild(fragment);
   }
-
   function collidesWithSolidBlock(centerX, centerY) {
     const cellWidth = arena.clientWidth / GRID_COLUMNS;
     const cellHeight = arena.clientHeight / GRID_ROWS;
