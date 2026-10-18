@@ -548,33 +548,56 @@
     renderEnemy(unit);
   }
 
-  function launchEnemyBoomerang(unit) {
+  function createEnemyProjectileElement(extraClass = "") {
     const element = projectileElement.cloneNode(true);
-    element.removeAttribute("id"); element.classList.add("enemy-projectile");
-    element.hidden = false; element.setAttribute("aria-hidden", "true"); arena.appendChild(element);
+    element.removeAttribute("id");
+    element.classList.add("enemy-projectile");
+    if (extraClass) element.classList.add(extraClass);
+    element.hidden = false;
+    element.setAttribute("aria-hidden", "true");
+    arena.appendChild(element);
+    return element;
+  }
+
+  function launchEnemyBoomerang(unit) {
+    const element = createEnemyProjectileElement();
     const dx = x - unit.x, dy = y - unit.y;
     const directionX = Math.abs(dx) >= Math.abs(dy) ? (Math.sign(dx) || unit.directionX) : 0;
     const directionY = directionX === 0 ? (Math.sign(dy) || unit.directionY) : 0;
     const cellSize = Math.min(arena.clientWidth / GRID_COLUMNS, arena.clientHeight / GRID_ROWS);
-    enemyProjectiles.push({element, owner: unit, x: unit.x, y: unit.y, directionX, directionY, distance: 0, maxDistance: cellSize * 3, returning: false});
+    enemyProjectiles.push({kind: "boomerang", element, owner: unit, x: unit.x, y: unit.y, directionX, directionY, distance: 0, maxDistance: cellSize * 3, returning: false, speed: PROJECTILE_SPEED});
+  }
+
+  function launchEnemyPoison(unit) {
+    const element = createEnemyProjectileElement("enemy-poison-projectile");
+    enemyProjectiles.push({kind: "poison", element, owner: unit, x: unit.x, y: unit.y, directionX: unit.directionX, directionY: unit.directionY, returning: false, speed: ENEMY_SPEED * 2.5});
   }
 
   function updateEnemyBoomerangs(delta, time) {
+    const cellWidth = arena.clientWidth / GRID_COLUMNS, cellHeight = arena.clientHeight / GRID_ROWS;
     for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
       const shot = enemyProjectiles[i];
-      if (!shot.owner.alive) { shot.element.remove(); enemyProjectiles.splice(i, 1); continue; }
-      if (!shot.returning) {
-        const step = 300 * delta;
+      const removeShot = () => { shot.element.remove(); enemyProjectiles.splice(i, 1); };
+      if (!shot.owner.alive) { removeShot(); continue; }
+      if (shot.kind === "poison") {
+        shot.x += shot.directionX * shot.speed * delta;
+        shot.y += shot.directionY * shot.speed * delta;
+        const row = Math.floor(shot.y / cellHeight), col = Math.floor(shot.x / cellWidth);
+        if (row < 0 || row >= GRID_ROWS || col < 0 || col >= GRID_COLUMNS || STAGE_MAP[row][col] === "1") { removeShot(); continue; }
+      } else if (!shot.returning) {
+        const step = shot.speed * delta;
         shot.x += shot.directionX * step; shot.y += shot.directionY * step; shot.distance += step;
         if (shot.distance >= shot.maxDistance) shot.returning = true;
       } else {
-        const dx = shot.owner.x - shot.x, dy = shot.owner.y - shot.y, d = Math.hypot(dx, dy), step = 300 * delta;
-        if (d <= step + 5) { shot.element.remove(); enemyProjectiles.splice(i, 1); continue; }
+        const dx = shot.owner.x - shot.x, dy = shot.owner.y - shot.y, d = Math.hypot(dx, dy), step = shot.speed * delta;
+        if (d <= step + 5) { removeShot(); continue; }
         shot.x += dx / d * step; shot.y += dy / d * step;
       }
-      shot.element.style.left = shot.x + "px"; shot.element.style.top = shot.y + "px";
+      shot.element.style.left = shot.x + "px";
+      shot.element.style.top = shot.y + "px";
       if (gameState === "playing" && time >= invincibleUntil && Math.hypot(x - shot.x, y - shot.y) <= Math.min(playerRadius.x, playerRadius.y) * .62 + 17) {
-        shot.element.remove(); enemyProjectiles.splice(i, 1); takePlayerHit(time);
+        removeShot();
+        takePlayerHit(time);
       }
     }
   }
@@ -665,6 +688,7 @@
     renderLives();
     resetProjectile();
     generateSoftBlocks();
+    soulCountAtStart = enemyUnits.filter(unit => unit.typeKey === "soul").length;
     placePlayerAtStart();
     placeEnemyAtStart();
   }
@@ -677,11 +701,19 @@
   }
 
   function handlePlayerEnemyCollision(time) {
-    if (gameState !== "playing" || time < invincibleUntil) return;
+    if (gameState !== "playing") return;
     const playerHitRadius = Math.min(playerRadius.x, playerRadius.y) * 0.62;
     for (const unit of enemyUnits) {
       if (!unit.alive) continue;
-      if (Math.hypot(x - unit.x, y - unit.y) <= playerHitRadius + (unit.radius || ENEMY_BASE_SIZE / 2)) { takePlayerHit(time); return; }
+      if (Math.hypot(x - unit.x, y - unit.y) > playerHitRadius + (unit.radius || ENEMY_BASE_SIZE / 2)) continue;
+      if (unit.typeKey === "devil" && unit.angry) {
+        shatterDevil(unit);
+        if (time >= invincibleUntil) takePlayerHit(time);
+        return;
+      }
+      if (time < invincibleUntil) continue;
+      takePlayerHit(time);
+      return;
     }
   }
 
@@ -1107,15 +1139,48 @@
     }, { once: true });
   }
 
+  function defeatEnemy(unit, awardPoints = true) {
+    if (!unit.alive) return;
+    unit.alive = false;
+    unit.element.setAttribute("aria-hidden", "true");
+    unit.element.classList.remove("is-angry", "is-guarding");
+    unit.element.classList.add("is-exploding");
+    if (awardPoints) collectEnemyPoints(unit);
+  }
+
+  function shatterDevil(unit) {
+    if (!unit.alive) return;
+    unit.angry = false;
+    defeatEnemy(unit, false);
+  }
+
+  function resolveDevilSoulRule() {
+    if (soulCountAtStart <= 0 || enemyUnits.some(unit => unit.typeKey === "soul" && unit.alive)) return;
+    for (const devil of enemyUnits) {
+      if (devil.typeKey === "devil" && devil.alive) defeatEnemy(devil, true);
+    }
+  }
+
   function explodeEnemy(unit) {
     if (!unit.alive) return;
+    if (unit.typeKey === "devil") {
+      if (unit.angry) return;
+      unit.angry = true;
+      unit.element.classList.add("is-angry");
+      const playerCell = getPlayerGridCell(arena.clientWidth / GRID_COLUMNS, arena.clientHeight / GRID_ROWS);
+      if (playerCell) {
+        const dx = playerCell.col - unit.col, dy = playerCell.row - unit.row;
+        if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) { unit.directionX = Math.sign(dx); unit.directionY = 0; }
+        else if (dy !== 0) { unit.directionX = 0; unit.directionY = Math.sign(dy); }
+      }
+      return;
+    }
     unit.hp -= 1;
     renderEnemyAppearance(unit);
     if (unit.hp > 0) { if (unit.typeKey === "fade") teleportFade(unit); return; }
-    unit.alive = false;
-    unit.element.setAttribute("aria-hidden", "true");
-    unit.element.classList.add("is-exploding");
-    collectEnemyPoints(unit);
+    const wasSoul = unit.typeKey === "soul";
+    defeatEnemy(unit, true);
+    if (wasSoul) resolveDevilSoulRule();
   }
 
   function checkProjectileEnemyCollision(time) {
@@ -1127,7 +1192,13 @@
       if (Math.hypot(projectile.x - unit.x, projectile.y - unit.y) <= contactDistance) {
         projectile.active = false;
         renderProjectile();
-        explodeEnemy(unit);
+        const frontDot = unit.directionX * (projectile.x - unit.x) + unit.directionY * (projectile.y - unit.y);
+        if (unit.type.guardsFront && frontDot > 0) {
+          unit.element.classList.add("is-guarding");
+          window.setTimeout(() => unit.element.classList.remove("is-guarding"), 240);
+        } else {
+          explodeEnemy(unit);
+        }
         startAttackCooldown(time);
         return;
       }
@@ -1274,6 +1345,7 @@
     generateSoftBlocks();
     fitPlayerToGrid();
     createEnemyUnits();
+    soulCountAtStart = enemyUnits.filter(unit => unit.typeKey === "soul").length;
     fitEnemyToGrid();
     // Start in the upper-left walkable cell; enemy positions are randomized away from it.
     placePlayerAtStart();
