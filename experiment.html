@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#080b18">
   <title>RETURN GRID | Movement Test</title>
-  <link rel="stylesheet" href="css/style.css?v=20261019-pathfind-enemies-scroll-v3">
-  <script src="js/experiment.js?v=20261019-pathfind-enemies-scroll" defer></script>
+  <link rel="stylesheet" href="css/style.css?v=20261019-enemy-expansion-v4">
+  <script src="js/experiment.js?v=20261019-enemy-expansion-v4" defer></script>
 </head>
 <body class="page page-experiment">
   <div class="scanlines" aria-hidden="true"></div>
@@ -32,9 +32,10 @@
               <span class="setup-index">CONFIGURATION / 01</span>
               <h2 id="setup-heading">ENEMY <span>CONFIGURATION</span></h2>
             </div>
-            <span class="setup-availability"><span class="status-dot"></span> 6 TYPES AVAILABLE</span>
+            <span class="setup-availability"><span class="status-dot"></span> 10 TYPES AVAILABLE</span>
           </div>
           <p class="setup-description">出現させる敵ユニットと配備数を指定して、実験を開始する。</p>
+          <p id="enemy-total-count" class="enemy-total-count" aria-live="polite">3 / 20 UNITS DEPLOYED</p>
 
           <div class="enemy-config-list">
             <div class="enemy-config-card">
@@ -176,7 +177,98 @@
               </div>
             </div>
           </div>
-
+            <div class="enemy-config-card">
+              <div class="enemy-preview-portrait enemy-preview-portrait--reaper">
+                <div class="enemy-drone enemy-reaper enemy-preview-drone" role="img" aria-label="敵キャラクター、REAPER">
+                  <span class="drone-aura" aria-hidden="true"></span><span class="drone-ring" aria-hidden="true"></span><span class="drone-eye" aria-hidden="true"></span>
+                  <span class="drone-light drone-light-left" aria-hidden="true"></span><span class="drone-light drone-light-right" aria-hidden="true"></span>
+                </div>
+              </div>
+              <div class="enemy-preview-text">
+                <span class="unit-index">ENEMY TYPE / 07</span><h3>REAPER</h3><p>Returning boomerang attacker</p>
+                <div class="unit-stats" aria-label="REAPERの性能">
+                  <span>HP <strong>5</strong></span><span>SCORE <strong>1600</strong></span><span>SPEED <strong>×0.9</strong></span><span>TURN <strong>50%</strong></span>
+                </div>
+              </div>
+              <div class="enemy-count-control">
+                <label class="count-label" for="enemy-reaper-count-value">DEPLOYMENT COUNT</label>
+                <div class="quantity-stepper">
+                  <button id="enemy-reaper-count-decrease" class="quantity-button" type="button" aria-label="REAPERの数を減らす">−</button>
+                  <output id="enemy-reaper-count-value" aria-live="polite">0</output>
+                  <button id="enemy-reaper-count-increase" class="quantity-button" type="button" aria-label="REAPERの数を増やす">+</button>
+                </div>
+                <span class="count-hint">MIN 0 <span aria-hidden="true">/</span> MAX 8 UNITS</span>
+              </div>
+            </div>
+            <div class="enemy-config-card">
+              <div class="enemy-preview-portrait enemy-preview-portrait--dash">
+                <div class="enemy-drone enemy-dash enemy-preview-drone" role="img" aria-label="敵キャラクター、DASH">
+                  <span class="drone-aura" aria-hidden="true"></span><span class="drone-ring" aria-hidden="true"></span><span class="drone-eye" aria-hidden="true"></span>
+                  <span class="drone-light drone-light-left" aria-hidden="true"></span><span class="drone-light drone-light-right" aria-hidden="true"></span>
+                </div>
+              </div>
+              <div class="enemy-preview-text">
+                <span class="unit-index">ENEMY TYPE / 08</span><h3>DASH</h3><p>Line-of-sight speed attacker</p>
+                <div class="unit-stats" aria-label="DASHの性能">
+                  <span>HP <strong>2</strong></span><span>SCORE <strong>500</strong></span><span>SPEED <strong>×1 / 2.5</strong></span><span>TURN <strong>30%</strong></span>
+                </div>
+              </div>
+              <div class="enemy-count-control">
+                <label class="count-label" for="enemy-dash-count-value">DEPLOYMENT COUNT</label>
+                <div class="quantity-stepper">
+                  <button id="enemy-dash-count-decrease" class="quantity-button" type="button" aria-label="DASHの数を減らす">−</button>
+                  <output id="enemy-dash-count-value" aria-live="polite">0</output>
+                  <button id="enemy-dash-count-increase" class="quantity-button" type="button" aria-label="DASHの数を増やす">+</button>
+                </div>
+                <span class="count-hint">MIN 0 <span aria-hidden="true">/</span> MAX 8 UNITS</span>
+              </div>
+            </div>
+            <div class="enemy-config-card">
+              <div class="enemy-preview-portrait enemy-preview-portrait--zigzag">
+                <div class="enemy-drone enemy-zigzag enemy-preview-drone" role="img" aria-label="敵キャラクター、ZIGZAG">
+                  <span class="drone-aura" aria-hidden="true"></span><span class="drone-ring" aria-hidden="true"></span><span class="drone-eye" aria-hidden="true"></span>
+                  <span class="drone-light drone-light-left" aria-hidden="true"></span><span class="drone-light drone-light-right" aria-hidden="true"></span>
+                </div>
+              </div>
+              <div class="enemy-preview-text">
+                <span class="unit-index">ENEMY TYPE / 09</span><h3>ZIGZAG</h3><p>Soft-block piercing unit</p>
+                <div class="unit-stats" aria-label="ZIGZAGの性能">
+                  <span>HP <strong>1</strong></span><span>SCORE <strong>400</strong></span><span>SPEED <strong>×2.65</strong></span><span>TURN <strong>50%</strong></span>
+                </div>
+              </div>
+              <div class="enemy-count-control">
+                <label class="count-label" for="enemy-zigzag-count-value">DEPLOYMENT COUNT</label>
+                <div class="quantity-stepper">
+                  <button id="enemy-zigzag-count-decrease" class="quantity-button" type="button" aria-label="ZIGZAGの数を減らす">−</button>
+                  <output id="enemy-zigzag-count-value" aria-live="polite">0</output>
+                  <button id="enemy-zigzag-count-increase" class="quantity-button" type="button" aria-label="ZIGZAGの数を増やす">+</button>
+                </div>
+                <span class="count-hint">MIN 0 <span aria-hidden="true">/</span> MAX 8 UNITS</span>
+              </div>
+            </div>
+            <div class="enemy-config-card">
+              <div class="enemy-preview-portrait enemy-preview-portrait--fade">
+                <div class="enemy-drone enemy-fade enemy-preview-drone" role="img" aria-label="敵キャラクター、FADE">
+                  <span class="drone-aura" aria-hidden="true"></span><span class="drone-ring" aria-hidden="true"></span><span class="drone-eye" aria-hidden="true"></span>
+                  <span class="drone-light drone-light-left" aria-hidden="true"></span><span class="drone-light drone-light-right" aria-hidden="true"></span>
+                </div>
+              </div>
+              <div class="enemy-preview-text">
+                <span class="unit-index">ENEMY TYPE / 10</span><h3>FADE</h3><p>Damage-triggered teleporter</p>
+                <div class="unit-stats" aria-label="FADEの性能">
+                  <span>HP <strong>4</strong></span><span>SCORE <strong>1200</strong></span><span>SPEED <strong>×1.35</strong></span><span>TURN <strong>35%</strong></span>
+                </div>
+              </div>
+              <div class="enemy-count-control">
+                <label class="count-label" for="enemy-fade-count-value">DEPLOYMENT COUNT</label>
+                <div class="quantity-stepper">
+                  <button id="enemy-fade-count-decrease" class="quantity-button" type="button" aria-label="FADEの数を減らす">−</button>
+                  <output id="enemy-fade-count-value" aria-live="polite">0</output>
+                  <button id="enemy-fade-count-increase" class="quantity-button" type="button" aria-label="FADEの数を増やす">+</button>
+                </div>
+                <span class="count-hint">MIN 0 <span aria-hidden="true">/</span> MAX 8 UNITS</span>
+              </div>
+            </div>
 
           <div class="setup-panel-footer">
             <span class="setup-ready"><span class="status-dot"></span> SYSTEM READY / AWAITING INPUT</span>
