@@ -1657,6 +1657,7 @@ h1 span {
 
 /* Compact, scrollable enemy setup: the viewport stays usable as new types are added. */
 .stage-setup {
+  min-height: 0;
   max-height: calc(100vh - 290px);
   max-height: calc(100dvh - 290px);
   overflow-x: hidden;
