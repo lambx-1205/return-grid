@@ -650,7 +650,7 @@ h1 span {
   top: 0;
   width: 42px;
   height: 42px;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(var(--drone-scale, 1));
   pointer-events: none;
   border: 1px solid rgba(255, 220, 220, .95);
   border-radius: 50%;
