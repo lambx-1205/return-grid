@@ -25,7 +25,7 @@
   const PLAYER_BASE_SIZE = 60;
   const playerRadius = { x: PLAYER_BASE_SIZE / 2, y: PLAYER_BASE_SIZE / 2 };
   const speed = 160; // CSS pixels per second.
-  const PROJECTILE_SIZE = 28;
+  const PROJECTILE_SIZE = 40;
   const PROJECTILE_SPEED = 300;
   const PROJECTILE_RETURN_SPEED = 340;
   let projectileRangeCells = 3; // Future range-upgrade items can increase this value.
