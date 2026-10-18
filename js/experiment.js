@@ -28,7 +28,7 @@
   const PROJECTILE_SIZE = 28;
   const PROJECTILE_SPEED = 300;
   const PROJECTILE_RETURN_SPEED = 340;
-  const PROJECTILE_MAX_CELLS = 5;
+  let projectileRangeCells = 3; // Future range-upgrade items can increase this value.
   let x = 0;
   let y = 0;
   let facingX = 0;
@@ -118,11 +118,12 @@
     const cellWidth = arena.clientWidth / GRID_COLUMNS;
     const cellHeight = arena.clientHeight / GRID_ROWS;
     const padding = PROJECTILE_SIZE / 2 + 1;
+    // The projectile may cross the metal perimeter, but stays visible within the arena.
     return {
-      minX: cellWidth + padding,
-      maxX: arena.clientWidth - cellWidth - padding,
-      minY: cellHeight + padding,
-      maxY: arena.clientHeight - cellHeight - padding,
+      minX: padding,
+      maxX: arena.clientWidth - padding,
+      minY: padding,
+      maxY: arena.clientHeight - padding,
       cellSize: Math.min(cellWidth, cellHeight)
     };
   }
@@ -169,7 +170,7 @@
     else if (facingX > 0) availableDistance = safe.maxX - projectile.x;
     else if (facingY < 0) availableDistance = projectile.y - safe.minY;
     else availableDistance = safe.maxY - projectile.y;
-    projectile.maxDistance = Math.max(0, Math.min(safe.cellSize * PROJECTILE_MAX_CELLS, availableDistance - 1));
+    projectile.maxDistance = Math.max(0, Math.min(safe.cellSize * projectileRangeCells, availableDistance - 1));
     renderProjectile();
   }
 
