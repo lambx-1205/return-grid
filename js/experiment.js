@@ -346,7 +346,7 @@
   // Start in a walkable cell on the bottom interior row (column 10, zero-based).
   const cellWidth = arena.clientWidth / GRID_COLUMNS;
   const cellHeight = arena.clientHeight / GRID_ROWS;
-  x = cellWidth * 10.5;
+  x = cellWidth * 9.5;
   y = arena.clientHeight - cellHeight * 1.5;
   keepInsideArena();
   renderPlayer();
