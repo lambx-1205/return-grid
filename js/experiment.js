@@ -6,6 +6,7 @@
   const player = document.querySelector("#player");
   const enemyDrone = document.querySelector("#enemy-drone");
   const stageBlocks = document.querySelector("#stage-blocks");
+  const scoreCount = document.querySelector("#score-count");
   const projectileElement = document.querySelector("#projectile");
   const movementStatus = document.querySelector("#movement-status");
   const lifeCount = document.querySelector("#life-count");
@@ -17,7 +18,7 @@
   const gameoverRestart = document.querySelector("#gameover-restart");
 
   if (!arena || !player || !enemyDrone || !stageBlocks || !projectileElement || !movementStatus ||
-      !lifeCount || !lifeIcons || !respawnOverlay || !respawnCountdown ||
+      !lifeCount || !lifeIcons || !scoreCount || !respawnOverlay || !respawnCountdown ||
       !restartButton || !gameoverOverlay || !gameoverRestart) {
     console.error("RETURN GRID: required movement-stage elements were not found.");
     return;
@@ -36,14 +37,16 @@
   const playerRadius = { x: PLAYER_BASE_SIZE / 2, y: PLAYER_BASE_SIZE / 2 };
   const speed = 160; // CSS pixels per second.
   const ENEMY_BASE_SIZE = 42;
-  const ENEMY_SPEED = 72;
-  let enemyX = 0;
-  let enemyY = 0;
-  let enemyAlive = true;
-  let enemyRow = 1;
-  let enemyCol = GRID_COLUMNS - 2;
-  let enemyDirectionX = -1;
-  let enemyDirectionY = 0;
+  const ENEMY_SPEED = 72; // Speed multiplier 1 is the current drone speed.
+  const ENEMY_TYPES = {
+    drone: { hp: 1, points: 100, speed: 1 }
+  };
+  const INITIAL_DRONE_COUNT = 3;
+  const enemyUnits = [];
+  const ITEM_COUNT = 6;
+  const ITEM_POINTS = 25;
+  const items = [];
+  let score = 0;
   const PROJECTILE_SIZE = 40;
   const PROJECTILE_SPEED = 300;
   const PROJECTILE_RETURN_SPEED = 340;
@@ -89,28 +92,9 @@
     const cellWidth = arena.clientWidth / GRID_COLUMNS;
     const cellHeight = arena.clientHeight / GRID_ROWS;
     const desiredSize = Math.min(cellWidth, cellHeight) * 0.72;
-    enemyDrone.style.setProperty("--drone-scale", String(desiredSize / ENEMY_BASE_SIZE));
-  }
-
-  function placeEnemyAtStart() {
-    // Start at the upper-right walkable cell inside the perimeter.
-    enemyAlive = true;
-    enemyDrone.hidden = false;
-    enemyDrone.classList.remove("is-exploding");
-    enemyRow = 1;
-    enemyCol = GRID_COLUMNS - 2;
-    enemyDirectionX = -1;
-    enemyDirectionY = 0;
-    const cellWidth = arena.clientWidth / GRID_COLUMNS;
-    const cellHeight = arena.clientHeight / GRID_ROWS;
-    enemyX = (enemyCol + 0.5) * cellWidth;
-    enemyY = (enemyRow + 0.5) * cellHeight;
-    renderEnemy();
-  }
-
-  function renderEnemy() {
-    enemyDrone.style.left = `${enemyX}px`;
-    enemyDrone.style.top = `${enemyY}px`;
+    for (const unit of enemyUnits) {
+      unit.element.style.setProperty("--drone-scale", String(desiredSize / ENEMY_BASE_SIZE));
+    }
   }
 
   function isWalkableCell(row, col) {
@@ -126,74 +110,176 @@
     { x: 0, y: 1 }
   ];
 
-  function chooseEnemyDirectionAtWall() {
-    // Look for open side passages; the normal fallback is to reverse direction.
-    const sideOptions = ENEMY_DIRECTIONS.filter(direction =>
-      direction.x * enemyDirectionX + direction.y * enemyDirectionY === 0 &&
-      isWalkableCell(enemyRow + direction.y, enemyCol + direction.x)
-    );
-
-    if (sideOptions.length > 0 && Math.random() < 0.40) {
-      const chosen = sideOptions[Math.floor(Math.random() * sideOptions.length)];
-      enemyDirectionX = chosen.x;
-      enemyDirectionY = chosen.y;
-    } else {
-      enemyDirectionX *= -1;
-      enemyDirectionY *= -1;
+  function createEnemyUnits() {
+    enemyUnits.length = 0;
+    for (let i = 0; i < INITIAL_DRONE_COUNT; i += 1) {
+      let element;
+      if (i === 0) {
+        element = enemyDrone;
+      } else {
+        element = enemyDrone.cloneNode(true);
+        element.id = `enemy-drone-${i + 1}`;
+        enemyDrone.parentElement.appendChild(element);
+      }
+      element.hidden = false;
+      element.classList.remove("is-exploding");
+      element.setAttribute("aria-hidden", "false");
+      const type = ENEMY_TYPES.drone;
+      const unit = {
+        element, type, hp: type.hp, alive: true, x: 0, y: 0, row: 1, col: 1,
+        directionX: i % 2 === 0 ? 1 : -1, directionY: 0, points: type.points, speed: type.speed
+      };
+      element.addEventListener("animationend", event => {
+        if (event.animationName === "enemy-drone-explode" && !unit.alive) element.hidden = true;
+      });
+      enemyUnits.push(unit);
     }
   }
 
-  function updateEnemy(delta) {
-    if (!enemyAlive) return;
+  function randomWalkableCell(occupied, minimumDistance = 0) {
+    const candidates = [];
+    for (let row = 1; row < GRID_ROWS - 1; row += 1) {
+      for (let col = 1; col < GRID_COLUMNS - 1; col += 1) {
+        if (!isWalkableCell(row, col)) continue;
+        if (occupied.some(cell => Math.abs(cell.row - row) + Math.abs(cell.col - col) < minimumDistance)) continue;
+        candidates.push({ row, col });
+      }
+    }
+    if (!candidates.length) return { row: 1, col: 1 };
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  function placeEnemyAtStart() {
     const cellWidth = arena.clientWidth / GRID_COLUMNS;
     const cellHeight = arena.clientHeight / GRID_ROWS;
-    let remaining = ENEMY_SPEED * delta;
+    const playerStart = { row: 1, col: 1 };
+    const occupied = [playerStart];
+    for (const unit of enemyUnits) {
+      const cell = randomWalkableCell(occupied, 6);
+      occupied.push(cell);
+      unit.alive = true;
+      unit.hp = unit.type.hp;
+      unit.element.hidden = false;
+      unit.element.setAttribute("aria-hidden", "false");
+      unit.element.classList.remove("is-exploding");
+      unit.row = cell.row;
+      unit.col = cell.col;
+      unit.x = (cell.col + 0.5) * cellWidth;
+      unit.y = (cell.row + 0.5) * cellHeight;
+      const directions = ENEMY_DIRECTIONS.filter(direction =>
+        isWalkableCell(unit.row + direction.y, unit.col + direction.x)
+      );
+      const chosen = directions[Math.floor(Math.random() * directions.length)] || { x: 1, y: 0 };
+      unit.directionX = chosen.x;
+      unit.directionY = chosen.y;
+      renderEnemy(unit);
+    }
+  }
+
+  function renderEnemy(unit) {
+    unit.element.style.left = `${unit.x}px`;
+    unit.element.style.top = `${unit.y}px`;
+  }
+
+  function chooseEnemyDirectionAtWall(unit) {
+    const sideOptions = ENEMY_DIRECTIONS.filter(direction =>
+      direction.x * unit.directionX + direction.y * unit.directionY === 0 &&
+      isWalkableCell(unit.row + direction.y, unit.col + direction.x)
+    );
+    if (sideOptions.length > 0 && Math.random() < 0.40) {
+      const chosen = sideOptions[Math.floor(Math.random() * sideOptions.length)];
+      unit.directionX = chosen.x;
+      unit.directionY = chosen.y;
+    } else {
+      unit.directionX *= -1;
+      unit.directionY *= -1;
+    }
+  }
+
+  function updateEnemy(unit, delta) {
+    if (!unit.alive) return;
+    const cellWidth = arena.clientWidth / GRID_COLUMNS;
+    const cellHeight = arena.clientHeight / GRID_ROWS;
+    let remaining = ENEMY_SPEED * unit.speed * delta;
     let guard = 0;
-
-    // Travel smoothly from cell center to cell center, turning only into open cells.
     while (remaining > 0 && guard < 8) {
-      let nextRow = enemyRow + enemyDirectionY;
-      let nextCol = enemyCol + enemyDirectionX;
-
+      let nextRow = unit.row + unit.directionY;
+      let nextCol = unit.col + unit.directionX;
       if (!isWalkableCell(nextRow, nextCol)) {
-        chooseEnemyDirectionAtWall();
-        nextRow = enemyRow + enemyDirectionY;
-        nextCol = enemyCol + enemyDirectionX;
+        chooseEnemyDirectionAtWall(unit);
+        nextRow = unit.row + unit.directionY;
+        nextCol = unit.col + unit.directionX;
       }
-
-      // The cell behind is guaranteed to be walkable after a reversal.
       if (!isWalkableCell(nextRow, nextCol)) break;
-
       const targetX = (nextCol + 0.5) * cellWidth;
       const targetY = (nextRow + 0.5) * cellHeight;
-      const offsetX = targetX - enemyX;
-      const offsetY = targetY - enemyY;
+      const offsetX = targetX - unit.x;
+      const offsetY = targetY - unit.y;
       const distance = Math.hypot(offsetX, offsetY);
-
       if (distance < 0.001) {
-        enemyCol = nextCol;
-        enemyRow = nextRow;
+        unit.col = nextCol;
+        unit.row = nextRow;
         guard += 1;
         continue;
       }
-
       const step = Math.min(remaining, distance);
-      enemyX += (offsetX / distance) * step;
-      enemyY += (offsetY / distance) * step;
+      unit.x += (offsetX / distance) * step;
+      unit.y += (offsetY / distance) * step;
       remaining -= step;
-
       if (step >= distance - 0.001) {
-        enemyX = targetX;
-        enemyY = targetY;
-        enemyCol = nextCol;
-        enemyRow = nextRow;
+        unit.x = targetX;
+        unit.y = targetY;
+        unit.col = nextCol;
+        unit.row = nextRow;
         guard += 1;
       } else {
         break;
       }
     }
+    renderEnemy(unit);
+  }
 
-    renderEnemy();
+  function renderScore() {
+    scoreCount.textContent = String(score);
+  }
+
+  function placeItems() {
+    for (const item of items) item.element.remove();
+    items.length = 0;
+    const occupied = [{ row: 1, col: 1 }, ...enemyUnits.filter(unit => unit.alive).map(unit => ({ row: unit.row, col: unit.col }))];
+    const cellWidth = arena.clientWidth / GRID_COLUMNS;
+    const cellHeight = arena.clientHeight / GRID_ROWS;
+    for (let i = 0; i < ITEM_COUNT; i += 1) {
+      const cell = randomWalkableCell(occupied, 3);
+      occupied.push(cell);
+      const element = document.createElement("div");
+      element.className = "score-item";
+      element.setAttribute("role", "img");
+      element.setAttribute("aria-label", `ポイントアイテム。取得すると${ITEM_POINTS}ポイント`);
+      element.style.left = `${(cell.col + 0.5) * cellWidth}px`;
+      element.style.top = `${(cell.row + 0.5) * cellHeight}px`;
+      arena.appendChild(element);
+      items.push({ element, row: cell.row, col: cell.col, x: (cell.col + 0.5) * cellWidth, y: (cell.row + 0.5) * cellHeight, points: ITEM_POINTS, collected: false });
+    }
+  }
+
+  function checkItemCollision() {
+    const cellWidth = arena.clientWidth / GRID_COLUMNS;
+    const cellHeight = arena.clientHeight / GRID_ROWS;
+    for (const item of items) {
+      if (item.collected) continue;
+      if (Math.hypot(x - item.x, y - item.y) < Math.min(cellWidth, cellHeight) * 0.48) {
+        item.collected = true;
+        item.element.remove();
+        score += item.points;
+        renderScore();
+      }
+    }
+  }
+
+  function collectEnemyPoints(unit) {
+    score += unit.points;
+    renderScore();
   }
 
   function bounds() {
@@ -234,8 +320,8 @@
   function placePlayerAtStart() {
     const cellWidth = arena.clientWidth / GRID_COLUMNS;
     const cellHeight = arena.clientHeight / GRID_ROWS;
-    x = cellWidth * 9.5;
-    y = cellHeight * (GRID_ROWS - 1.5);
+    x = cellWidth * 1.5;
+    y = cellHeight * 1.5;
     facingX = 0;
     facingY = -1;
     keepInsideArena();
@@ -254,6 +340,8 @@
   function restartGame() {
     clearKeys();
     lives = INITIAL_LIVES;
+    score = 0;
+    renderScore();
     gameState = "playing";
     respawnEndsAt = 0;
     respawnOverlay.hidden = true;
@@ -266,6 +354,7 @@
     resetProjectile();
     placePlayerAtStart();
     placeEnemyAtStart();
+    placeItems();
   }
 
   function showGameOver() {
@@ -276,27 +365,29 @@
   }
 
   function handlePlayerEnemyCollision() {
-    if (gameState !== "playing" || !enemyAlive) return;
+    if (gameState !== "playing") return;
     const playerHitRadius = Math.min(playerRadius.x, playerRadius.y) * 0.62;
-    const enemyHitRadius = enemyDrone.getBoundingClientRect().width * 0.5;
-    if (Math.hypot(x - enemyX, y - enemyY) > playerHitRadius + enemyHitRadius) return;
-
-    clearKeys();
-    resetProjectile();
-    if (lives <= 0) {
-      gameState = "dying-gameover";
+    for (const unit of enemyUnits) {
+      if (!unit.alive) continue;
+      const enemyHitRadius = unit.element.getBoundingClientRect().width * 0.5;
+      if (Math.hypot(x - unit.x, y - unit.y) > playerHitRadius + enemyHitRadius) continue;
+      clearKeys();
+      resetProjectile();
+      if (lives <= 0) {
+        gameState = "dying-gameover";
+        player.classList.add("is-dying");
+        return;
+      }
+      lives -= 1;
+      renderLives();
+      gameState = "respawning";
+      respawnEndsAt = performance.now() + RESPAWN_DELAY_MS;
+      respawnCountdown.textContent = "3";
+      respawnOverlay.hidden = false;
+      movementStatus.textContent = "RESPAWNING";
       player.classList.add("is-dying");
       return;
     }
-
-    lives -= 1;
-    renderLives();
-    gameState = "respawning";
-    respawnEndsAt = performance.now() + RESPAWN_DELAY_MS;
-    respawnCountdown.textContent = "3";
-    respawnOverlay.hidden = false;
-    movementStatus.textContent = "RESPAWNING";
-    player.classList.add("is-dying");
   }
 
   function updateRespawnCountdown(time) {
@@ -500,31 +591,30 @@
     renderProjectile();
   }
 
-  function explodeEnemy() {
-    if (!enemyAlive) return;
-    enemyAlive = false;
-    enemyDrone.setAttribute("aria-hidden", "true");
-    enemyDrone.classList.add("is-exploding");
+  function explodeEnemy(unit) {
+    if (!unit.alive) return;
+    unit.hp -= 1;
+    if (unit.hp > 0) return;
+    unit.alive = false;
+    unit.element.setAttribute("aria-hidden", "true");
+    unit.element.classList.add("is-exploding");
+    collectEnemyPoints(unit);
   }
 
   function checkProjectileEnemyCollision() {
-    if (gameState !== "playing" || !enemyAlive || !projectile.active) return;
-
-    // Compare the projectile and drone as circles using their visual size.
-    const enemyRadius = enemyDrone.getBoundingClientRect().width / 2;
-    const contactDistance = enemyRadius + PROJECTILE_SIZE / 2;
-    if (Math.hypot(projectile.x - enemyX, projectile.y - enemyY) <= contactDistance) {
-      projectile.active = false;
-      renderProjectile();
-      explodeEnemy();
+    if (gameState !== "playing" || !projectile.active) return;
+    for (const unit of enemyUnits) {
+      if (!unit.alive) continue;
+      const enemyRadius = unit.element.getBoundingClientRect().width / 2;
+      const contactDistance = enemyRadius + PROJECTILE_SIZE / 2;
+      if (Math.hypot(projectile.x - unit.x, projectile.y - unit.y) <= contactDistance) {
+        projectile.active = false;
+        renderProjectile();
+        explodeEnemy(unit);
+        return;
+      }
     }
   }
-
-  enemyDrone.addEventListener("animationend", event => {
-    if (event.animationName === "enemy-drone-explode") {
-      enemyDrone.hidden = true;
-    }
-  });
 
   function onKeyDown(event) {
     if (gameState !== "playing") {
@@ -564,7 +654,7 @@
       // Keep the enemy patrolling during the countdown, but disable player input
       // and all collision checks until the player has returned.
       if (gameState === "respawning") {
-        updateEnemy(delta);
+        for (const unit of enemyUnits) updateEnemy(unit, delta);
         updateRespawnCountdown(time);
       }
       window.requestAnimationFrame(frame);
@@ -619,9 +709,10 @@
       movementStatus.textContent = "STANDBY";
     }
 
-    updateEnemy(delta);
+    for (const unit of enemyUnits) updateEnemy(unit, delta);
     updateProjectile(delta);
     checkProjectileEnemyCollision();
+    checkItemCollision();
     handlePlayerEnemyCollision();
     renderPlayer();
     window.requestAnimationFrame(frame);
@@ -629,12 +720,15 @@
 
   buildHardBlocks();
   fitPlayerToGrid();
+  createEnemyUnits();
   fitEnemyToGrid();
 
-  // Start in a walkable cell on the bottom interior row.
+  // Start in the upper-left walkable cell, with enemies spaced away from the player.
   placePlayerAtStart();
   placeEnemyAtStart();
+  placeItems();
   renderLives();
+  renderScore();
   renderPlayer();
   renderProjectile();
 
@@ -650,9 +744,17 @@
     keepInsideArena();
     const cellWidth = arena.clientWidth / GRID_COLUMNS;
     const cellHeight = arena.clientHeight / GRID_ROWS;
-    enemyX = (enemyCol + 0.5) * cellWidth;
-    enemyY = (enemyRow + 0.5) * cellHeight;
-    renderEnemy();
+    for (const unit of enemyUnits) {
+      unit.x = (unit.col + 0.5) * cellWidth;
+      unit.y = (unit.row + 0.5) * cellHeight;
+      renderEnemy(unit);
+    }
+    for (const item of items) {
+      item.x = (item.col + 0.5) * cellWidth;
+      item.y = (item.row + 0.5) * cellHeight;
+      item.element.style.left = `${item.x}px`;
+      item.element.style.top = `${item.y}px`;
+    }
     renderPlayer();
   });
 
