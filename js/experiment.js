@@ -23,16 +23,19 @@
   const gameplayView = document.querySelector("#gameplay-view");
   const stageTitle = document.querySelector("#stage-title");
   const stageBadge = document.querySelector("#stage-badge");
-  const enemyCountValue = document.querySelector("#enemy-count-value");
-  const enemyCountDecrease = document.querySelector("#enemy-count-decrease");
-  const enemyCountIncrease = document.querySelector("#enemy-count-increase");
+  const enemyCountControls = {
+    drone: { value: document.querySelector("#enemy-count-value"), decrease: document.querySelector("#enemy-count-decrease"), increase: document.querySelector("#enemy-count-increase") },
+    tank: { value: document.querySelector("#enemy-tank-count-value"), decrease: document.querySelector("#enemy-tank-count-decrease"), increase: document.querySelector("#enemy-tank-count-increase") },
+    scout: { value: document.querySelector("#enemy-scout-count-value"), decrease: document.querySelector("#enemy-scout-count-decrease"), increase: document.querySelector("#enemy-scout-count-increase") }
+  };
   const gameStartButton = document.querySelector("#game-start-button");
 
   if (!arena || !player || !enemyDrone || !stageBlocks || !projectileElement || !movementStatus ||
       !attackCooldown || !attackCooldownRing || !attackCooldownValue ||
       !lifeCount || !lifeIcons || !scoreCount || !respawnOverlay || !respawnCountdown ||
       !restartButton || !gameoverOverlay || !gameoverRestart || !stageSetup || !gameplayView ||
-      !stageTitle || !stageBadge || !enemyCountValue || !enemyCountDecrease || !enemyCountIncrease ||
+      !stageTitle || !stageBadge ||
+      Object.values(enemyCountControls).some(control => !control.value || !control.decrease || !control.increase) ||
       !gameStartButton) {
     console.error("RETURN GRID: required movement-stage elements were not found.");
     return;
@@ -53,12 +56,16 @@
   const ENEMY_BASE_SIZE = 42;
   const ENEMY_SPEED = 72; // Speed multiplier 1 is the current drone speed.
   const ENEMY_TYPES = {
-    drone: { hp: 1, points: 100, speed: 1 }
+    drone: { hp: 1, points: 100, speed: 1, turnChance: 0.40 },
+    tank: { hp: 3, points: 250, speed: 0.55, turnChance: 1.00 },
+    scout: { hp: 1, points: 200, speed: 2, turnChance: 0.65 }
   };
-  const DEFAULT_DRONE_COUNT = 3;
-  const MIN_DRONE_COUNT = 1;
-  const MAX_DRONE_COUNT = 8;
-  let configuredDroneCount = DEFAULT_DRONE_COUNT;
+  const configuredEnemyCounts = { drone: 3, tank: 1, scout: 1 };
+  const ENEMY_COUNT_LIMITS = {
+    drone: { min: 1, max: 8 },
+    tank: { min: 0, max: 8 },
+    scout: { min: 0, max: 8 }
+  };
   let gameStarted = false;
   const enemyUnits = [];
   const softBlockCells = new Map();
@@ -78,6 +85,7 @@
   const INITIAL_LIVES = 5;
   const RESPAWN_DELAY_MS = 3000;
   const RESPAWN_INVINCIBILITY_MS = 3000;
+  const START_INVINCIBILITY_MS = 5000;
   let lives = INITIAL_LIVES;
   let gameState = "configuring";
   let respawnEndsAt = 0;
@@ -144,27 +152,37 @@
     arena.querySelectorAll(".enemy-drone").forEach(element => {
       if (element !== enemyDrone) element.remove();
     });
-    for (let i = 0; i < configuredDroneCount; i += 1) {
-      let element;
-      if (i === 0) {
-        element = enemyDrone;
-      } else {
-        element = enemyDrone.cloneNode(true);
-        element.id = `enemy-drone-${i + 1}`;
-        arena.appendChild(element);
+    let prototypeClaimed = false;
+    let unitIndex = 0;
+    for (const typeKey of Object.keys(ENEMY_TYPES)) {
+      for (let instance = 0; instance < configuredEnemyCounts[typeKey]; instance += 1) {
+        let element;
+        if (typeKey === "drone" && !prototypeClaimed) {
+          element = enemyDrone;
+          prototypeClaimed = true;
+        } else {
+          element = enemyDrone.cloneNode(true);
+          element.id = "enemy-" + typeKey + "-" + (instance + 1);
+          arena.appendChild(element);
+        }
+        element.classList.remove("enemy-tank", "enemy-scout", "is-exploding", "tank-hp-3", "tank-hp-2", "tank-hp-1");
+        if (typeKey !== "drone") element.classList.add("enemy-" + typeKey);
+        element.hidden = false;
+        element.setAttribute("aria-hidden", "false");
+        element.setAttribute("aria-label", "敵キャラクター。" + typeKey.toUpperCase());
+        element.dataset.enemyType = typeKey;
+        const type = ENEMY_TYPES[typeKey];
+        const unit = {
+          element, type, typeKey, hp: type.hp, alive: true, x: 0, y: 0, row: 1, col: 1,
+          directionX: unitIndex % 2 === 0 ? 1 : -1, directionY: 0,
+          points: type.points, speed: type.speed
+        };
+        element.addEventListener("animationend", event => {
+          if (event.animationName === "enemy-drone-explode" && !unit.alive) element.hidden = true;
+        });
+        enemyUnits.push(unit);
+        unitIndex += 1;
       }
-      element.hidden = false;
-      element.classList.remove("is-exploding");
-      element.setAttribute("aria-hidden", "false");
-      const type = ENEMY_TYPES.drone;
-      const unit = {
-        element, type, hp: type.hp, alive: true, x: 0, y: 0, row: 1, col: 1,
-        directionX: i % 2 === 0 ? 1 : -1, directionY: 0, points: type.points, speed: type.speed
-      };
-      element.addEventListener("animationend", event => {
-        if (event.animationName === "enemy-drone-explode" && !unit.alive) element.hidden = true;
-      });
-      enemyUnits.push(unit);
     }
   }
 
@@ -215,6 +233,7 @@
       unit.element.hidden = false;
       unit.element.setAttribute("aria-hidden", "false");
       unit.element.classList.remove("is-exploding");
+      renderEnemyAppearance(unit);
       unit.row = cell.row;
       unit.col = cell.col;
       unit.x = (cell.col + 0.5) * cellWidth;
@@ -234,12 +253,20 @@
     unit.element.style.top = `${unit.y}px`;
   }
 
+  function renderEnemyAppearance(unit) {
+    unit.element.classList.remove("tank-hp-3", "tank-hp-2", "tank-hp-1");
+    if (unit.typeKey === "tank") {
+      unit.element.classList.add("tank-hp-" + Math.max(1, unit.hp));
+      unit.element.dataset.hp = String(unit.hp);
+    }
+  }
+
   function chooseEnemyDirectionAtWall(unit) {
     const sideOptions = ENEMY_DIRECTIONS.filter(direction =>
       direction.x * unit.directionX + direction.y * unit.directionY === 0 &&
       isWalkableCell(unit.row + direction.y, unit.col + direction.x)
     );
-    if (sideOptions.length > 0 && Math.random() < 0.40) {
+    if (sideOptions.length > 0 && Math.random() < unit.type.turnChance) {
       const chosen = sideOptions[Math.floor(Math.random() * sideOptions.length)];
       unit.directionX = chosen.x;
       unit.directionY = chosen.y;
@@ -379,11 +406,12 @@
     renderScore();
     gameState = "playing";
     respawnEndsAt = 0;
-    invincibleUntil = 0;
+    invincibleUntil = performance.now() + START_INVINCIBILITY_MS;
     attackCooldownEndsAt = 0;
     updateAttackCooldown(performance.now());
     respawnOverlay.hidden = true;
     player.classList.remove("is-dying", "is-respawning", "is-invincible", "is-moving", "moving-left", "moving-right", "moving-up", "moving-down");
+    player.classList.add("is-invincible");
     player.style.setProperty("--trail-x", "0px");
     player.style.setProperty("--trail-y", "0px");
     gameoverOverlay.hidden = true;
@@ -853,6 +881,7 @@
   function explodeEnemy(unit) {
     if (!unit.alive) return;
     unit.hp -= 1;
+    renderEnemyAppearance(unit);
     if (unit.hp > 0) return;
     unit.alive = false;
     unit.element.setAttribute("aria-hidden", "true");
@@ -981,10 +1010,17 @@
     window.requestAnimationFrame(frame);
   }
 
-  function renderEnemyCountControl() {
-    enemyCountValue.textContent = String(configuredDroneCount);
-    enemyCountDecrease.disabled = configuredDroneCount <= MIN_DRONE_COUNT;
-    enemyCountIncrease.disabled = configuredDroneCount >= MAX_DRONE_COUNT;
+  function renderEnemyCountControl(typeKey) {
+    const controls = enemyCountControls[typeKey];
+    const limits = ENEMY_COUNT_LIMITS[typeKey];
+    const count = configuredEnemyCounts[typeKey];
+    controls.value.textContent = String(count);
+    controls.decrease.disabled = count <= limits.min;
+    controls.increase.disabled = count >= limits.max;
+  }
+
+  function renderEnemyCountControls() {
+    for (const typeKey of Object.keys(ENEMY_TYPES)) renderEnemyCountControl(typeKey);
   }
 
   function startGame() {
@@ -997,6 +1033,8 @@
     stageTitle.innerHTML = "TEST <span>AREA</span>";
     stageBadge.innerHTML = '<span class="status-dot"></span> GRID 23 × 11';
     gameState = "playing";
+    invincibleUntil = performance.now() + START_INVINCIBILITY_MS;
+    player.classList.add("is-invincible");
 
     buildHardBlocks();
     generateSoftBlocks();
@@ -1013,16 +1051,20 @@
     arena.focus({ preventScroll: true });
   }
 
-  enemyCountDecrease.addEventListener("click", () => {
-    configuredDroneCount = Math.max(MIN_DRONE_COUNT, configuredDroneCount - 1);
-    renderEnemyCountControl();
-  });
-  enemyCountIncrease.addEventListener("click", () => {
-    configuredDroneCount = Math.min(MAX_DRONE_COUNT, configuredDroneCount + 1);
-    renderEnemyCountControl();
-  });
+  for (const typeKey of Object.keys(ENEMY_TYPES)) {
+    const controls = enemyCountControls[typeKey];
+    const limits = ENEMY_COUNT_LIMITS[typeKey];
+    controls.decrease.addEventListener("click", () => {
+      configuredEnemyCounts[typeKey] = Math.max(limits.min, configuredEnemyCounts[typeKey] - 1);
+      renderEnemyCountControl(typeKey);
+    });
+    controls.increase.addEventListener("click", () => {
+      configuredEnemyCounts[typeKey] = Math.min(limits.max, configuredEnemyCounts[typeKey] + 1);
+      renderEnemyCountControl(typeKey);
+    });
+  }
   gameStartButton.addEventListener("click", startGame);
-  renderEnemyCountControl();
+  renderEnemyCountControls();
 
   restartButton.addEventListener("click", restartGame);
   gameoverRestart.addEventListener("click", restartGame);
