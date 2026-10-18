@@ -26,7 +26,10 @@
   const enemyCountControls = {
     drone: { value: document.querySelector("#enemy-count-value"), decrease: document.querySelector("#enemy-count-decrease"), increase: document.querySelector("#enemy-count-increase") },
     tank: { value: document.querySelector("#enemy-tank-count-value"), decrease: document.querySelector("#enemy-tank-count-decrease"), increase: document.querySelector("#enemy-tank-count-increase") },
-    scout: { value: document.querySelector("#enemy-scout-count-value"), decrease: document.querySelector("#enemy-scout-count-decrease"), increase: document.querySelector("#enemy-scout-count-increase") }
+    scout: { value: document.querySelector("#enemy-scout-count-value"), decrease: document.querySelector("#enemy-scout-count-decrease"), increase: document.querySelector("#enemy-scout-count-increase") },
+    hunter: { value: document.querySelector("#enemy-hunter-count-value"), decrease: document.querySelector("#enemy-hunter-count-decrease"), increase: document.querySelector("#enemy-hunter-count-increase") },
+    feint: { value: document.querySelector("#enemy-feint-count-value"), decrease: document.querySelector("#enemy-feint-count-decrease"), increase: document.querySelector("#enemy-feint-count-increase") },
+    photon: { value: document.querySelector("#enemy-photon-count-value"), decrease: document.querySelector("#enemy-photon-count-decrease"), increase: document.querySelector("#enemy-photon-count-increase") }
   };
   const gameStartButton = document.querySelector("#game-start-button");
 
@@ -58,13 +61,19 @@
   const ENEMY_TYPES = {
     drone: { hp: 1, points: 100, speed: 1, turnChance: 0.40 },
     tank: { hp: 3, points: 250, speed: 0.55, turnChance: 1.00 },
-    scout: { hp: 1, points: 200, speed: 2, turnChance: 0.65 }
+    scout: { hp: 1, points: 200, speed: 2, turnChance: 0.65 },
+    hunter: { hp: 2, points: 500, speed: 0.85, behavior: "chase", fallbackTurnChance: 0.40 },
+    feint: { hp: 2, points: 600, speed: 1.20, behavior: "flee", fallbackTurnChance: 0.40 },
+    photon: { hp: 2, points: 1000, speed: 4, turnChance: 0.10 }
   };
-  const configuredEnemyCounts = { drone: 3, tank: 1, scout: 1 };
+  const configuredEnemyCounts = { drone: 3, tank: 1, scout: 1, hunter: 1, feint: 1, photon: 1 };
   const ENEMY_COUNT_LIMITS = {
     drone: { min: 1, max: 8 },
     tank: { min: 0, max: 8 },
-    scout: { min: 0, max: 8 }
+    scout: { min: 0, max: 8 },
+    hunter: { min: 0, max: 8 },
+    feint: { min: 0, max: 8 },
+    photon: { min: 0, max: 8 }
   };
   let gameStarted = false;
   const enemyUnits = [];
@@ -165,7 +174,10 @@
           element.id = "enemy-" + typeKey + "-" + (instance + 1);
           arena.appendChild(element);
         }
-        element.classList.remove("enemy-tank", "enemy-scout", "is-exploding", "tank-hp-3", "tank-hp-2", "tank-hp-1");
+        element.classList.remove(
+          "enemy-tank", "enemy-scout", "enemy-hunter", "enemy-feint", "enemy-photon",
+          "is-exploding", "tank-hp-3", "tank-hp-2", "tank-hp-1"
+        );
         if (typeKey !== "drone") element.classList.add("enemy-" + typeKey);
         element.hidden = false;
         element.setAttribute("aria-hidden", "false");
@@ -266,7 +278,8 @@
       direction.x * unit.directionX + direction.y * unit.directionY === 0 &&
       isWalkableCell(unit.row + direction.y, unit.col + direction.x)
     );
-    if (sideOptions.length > 0 && Math.random() < unit.type.turnChance) {
+    const turnChance = unit.type.turnChance ?? unit.type.fallbackTurnChance ?? 0.40;
+    if (sideOptions.length > 0 && Math.random() < turnChance) {
       const chosen = sideOptions[Math.floor(Math.random() * sideOptions.length)];
       unit.directionX = chosen.x;
       unit.directionY = chosen.y;
@@ -276,6 +289,82 @@
     }
   }
 
+  function getPlayerGridCell(cellWidth, cellHeight) {
+    const row = Math.max(0, Math.min(GRID_ROWS - 1, Math.floor(y / cellHeight)));
+    const col = Math.max(0, Math.min(GRID_COLUMNS - 1, Math.floor(x / cellWidth)));
+    if (isWalkableCell(row, col)) return { row, col };
+
+    // Collision normally keeps the player on floor cells; recover gracefully at boundaries.
+    let nearest = null;
+    let nearestDistance = Infinity;
+    for (let candidateRow = 1; candidateRow < GRID_ROWS - 1; candidateRow += 1) {
+      for (let candidateCol = 1; candidateCol < GRID_COLUMNS - 1; candidateCol += 1) {
+        if (!isWalkableCell(candidateRow, candidateCol)) continue;
+        const distance = Math.abs(candidateRow - row) + Math.abs(candidateCol - col);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearest = { row: candidateRow, col: candidateCol };
+        }
+      }
+    }
+    return nearest;
+  }
+
+  function getReachableCellDistances(startRow, startCol) {
+    const distances = new Map();
+    if (!isWalkableCell(startRow, startCol)) return distances;
+
+    distances.set(cellKey(startRow, startCol), 0);
+    const queue = [{ row: startRow, col: startCol }];
+    for (let index = 0; index < queue.length; index += 1) {
+      const current = queue[index];
+      const nextDistance = distances.get(cellKey(current.row, current.col)) + 1;
+      for (const direction of ENEMY_DIRECTIONS) {
+        const row = current.row + direction.y;
+        const col = current.col + direction.x;
+        const key = cellKey(row, col);
+        if (!isWalkableCell(row, col) || distances.has(key)) continue;
+        distances.set(key, nextDistance);
+        queue.push({ row, col });
+      }
+    }
+    return distances;
+  }
+
+  function chooseStrategicDirection(unit, cellWidth, cellHeight) {
+    if (unit.type.behavior !== "chase" && unit.type.behavior !== "flee") return null;
+
+    const playerCell = getPlayerGridCell(cellWidth, cellHeight);
+    if (!playerCell) return null;
+    const distances = getReachableCellDistances(playerCell.row, playerCell.col);
+    const currentDistance = distances.get(cellKey(unit.row, unit.col));
+
+    // If walls or destructible blocks separate the unit from the player, keep patrolling.
+    if (currentDistance === undefined) return null;
+
+    const options = ENEMY_DIRECTIONS
+      .map(direction => ({
+        direction,
+        row: unit.row + direction.y,
+        col: unit.col + direction.x
+      }))
+      .filter(candidate =>
+        isWalkableCell(candidate.row, candidate.col) &&
+        distances.has(cellKey(candidate.row, candidate.col))
+      )
+      .map(candidate => ({
+        direction: candidate.direction,
+        distance: distances.get(cellKey(candidate.row, candidate.col))
+      }));
+
+    if (!options.length) return null;
+    const bestDistance = unit.type.behavior === "chase"
+      ? Math.min(...options.map(option => option.distance))
+      : Math.max(...options.map(option => option.distance));
+    const bestOptions = options.filter(option => option.distance === bestDistance);
+    return bestOptions[Math.floor(Math.random() * bestOptions.length)].direction;
+  }
+
   function updateEnemy(unit, delta) {
     if (!unit.alive) return;
     const cellWidth = arena.clientWidth / GRID_COLUMNS;
@@ -283,6 +372,17 @@
     let remaining = ENEMY_SPEED * unit.speed * delta;
     let guard = 0;
     while (remaining > 0 && guard < 8) {
+      const centerX = (unit.col + 0.5) * cellWidth;
+      const centerY = (unit.row + 0.5) * cellHeight;
+      const atCellCenter = Math.abs(unit.x - centerX) < 0.01 && Math.abs(unit.y - centerY) < 0.01;
+      if (atCellCenter && unit.type.behavior) {
+        const strategicDirection = chooseStrategicDirection(unit, cellWidth, cellHeight);
+        if (strategicDirection) {
+          unit.directionX = strategicDirection.x;
+          unit.directionY = strategicDirection.y;
+        }
+      }
+
       let nextRow = unit.row + unit.directionY;
       let nextCol = unit.col + unit.directionX;
       if (!isWalkableCell(nextRow, nextCol)) {
