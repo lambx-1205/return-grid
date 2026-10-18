@@ -30,7 +30,10 @@
   const ENEMY_SPEED = 72;
   let enemyX = 0;
   let enemyY = 0;
-  let enemyDirection = -1;
+  let enemyRow = 1;
+  let enemyCol = GRID_COLUMNS - 2;
+  let enemyDirectionX = -1;
+  let enemyDirectionY = 0;
   const PROJECTILE_SIZE = 40;
   const PROJECTILE_SPEED = 300;
   const PROJECTILE_RETURN_SPEED = 340;
@@ -75,12 +78,15 @@
   }
 
   function placeEnemyAtStart() {
+    // Start at the upper-right walkable cell inside the perimeter.
+    enemyRow = 1;
+    enemyCol = GRID_COLUMNS - 2;
+    enemyDirectionX = -1;
+    enemyDirectionY = 0;
     const cellWidth = arena.clientWidth / GRID_COLUMNS;
     const cellHeight = arena.clientHeight / GRID_ROWS;
-    // Top-right walkable cell, just inside the hard-block perimeter.
-    enemyX = arena.clientWidth - cellWidth * 1.5;
-    enemyY = cellHeight * 1.5;
-    enemyDirection = -1;
+    enemyX = (enemyCol + 0.5) * cellWidth;
+    enemyY = (enemyRow + 0.5) * cellHeight;
     renderEnemy();
   }
 
@@ -89,20 +95,85 @@
     enemyDrone.style.top = `${enemyY}px`;
   }
 
+  function isWalkableCell(row, col) {
+    return row >= 0 && row < GRID_ROWS &&
+      col >= 0 && col < GRID_COLUMNS &&
+      STAGE_MAP[row][col] === "0";
+  }
+
+  const ENEMY_DIRECTIONS = [
+    { x: -1, y: 0 },
+    { x: 1, y: 0 },
+    { x: 0, y: -1 },
+    { x: 0, y: 1 }
+  ];
+
+  function chooseEnemyDirectionAtWall() {
+    // Look for open side passages; the normal fallback is to reverse direction.
+    const sideOptions = ENEMY_DIRECTIONS.filter(direction =>
+      direction.x * enemyDirectionX + direction.y * enemyDirectionY === 0 &&
+      isWalkableCell(enemyRow + direction.y, enemyCol + direction.x)
+    );
+
+    if (sideOptions.length > 0 && Math.random() < 0.25) {
+      const chosen = sideOptions[Math.floor(Math.random() * sideOptions.length)];
+      enemyDirectionX = chosen.x;
+      enemyDirectionY = chosen.y;
+    } else {
+      enemyDirectionX *= -1;
+      enemyDirectionY *= -1;
+    }
+  }
+
   function updateEnemy(delta) {
     const cellWidth = arena.clientWidth / GRID_COLUMNS;
-    // Patrol horizontally along the open row immediately below the top border.
-    const minX = cellWidth * 1.5;
-    const maxX = arena.clientWidth - cellWidth * 1.5;
-    enemyX += enemyDirection * ENEMY_SPEED * delta;
+    const cellHeight = arena.clientHeight / GRID_ROWS;
+    let remaining = ENEMY_SPEED * delta;
+    let guard = 0;
 
-    if (enemyX <= minX) {
-      enemyX = minX;
-      enemyDirection = 1;
-    } else if (enemyX >= maxX) {
-      enemyX = maxX;
-      enemyDirection = -1;
+    // Travel smoothly from cell center to cell center, turning only into open cells.
+    while (remaining > 0 && guard < 8) {
+      let nextRow = enemyRow + enemyDirectionY;
+      let nextCol = enemyCol + enemyDirectionX;
+
+      if (!isWalkableCell(nextRow, nextCol)) {
+        chooseEnemyDirectionAtWall();
+        nextRow = enemyRow + enemyDirectionY;
+        nextCol = enemyCol + enemyDirectionX;
+      }
+
+      // The cell behind is guaranteed to be walkable after a reversal.
+      if (!isWalkableCell(nextRow, nextCol)) break;
+
+      const targetX = (nextCol + 0.5) * cellWidth;
+      const targetY = (nextRow + 0.5) * cellHeight;
+      const offsetX = targetX - enemyX;
+      const offsetY = targetY - enemyY;
+      const distance = Math.hypot(offsetX, offsetY);
+
+      if (distance < 0.001) {
+        enemyCol = nextCol;
+        enemyRow = nextRow;
+        guard += 1;
+        continue;
+      }
+
+      const step = Math.min(remaining, distance);
+      enemyX += (offsetX / distance) * step;
+      enemyY += (offsetY / distance) * step;
+      remaining -= step;
+
+      if (step >= distance - 0.001) {
+        enemyX = targetX;
+        enemyY = targetY;
+        enemyCol = nextCol;
+        enemyRow = nextRow;
+        guard += 1;
+      } else {
+        break;
+      }
     }
+
     renderEnemy();
   }
 
@@ -137,15 +208,15 @@
   // Stage layout: 1 = hard block, 0 = walkable. The perimeter is always blocked.
   const STAGE_MAP = [
     "11111111111111111111111",
-    "10000000000000000000001",
+    "10000000000010000000001",
+    "10111010101010101010101",
+    "10000000000010000000001",
     "10101010101010101010101",
-    "10000000000000000000001",
+    "10000000000010000000001",
+    "10101010101011101010101",
+    "10000010000000000010001",
     "10101010101010101010101",
-    "10000000000000000000001",
-    "10101010101010101010101",
-    "10000000000000000000001",
-    "10101010101010101010101",
-    "10000000000000000000001",
+    "10000010000000000000001",
     "11111111111111111111111"
   ];
   const hardBlockCells = [];
@@ -413,8 +484,8 @@
     keepInsideArena();
     const cellWidth = arena.clientWidth / GRID_COLUMNS;
     const cellHeight = arena.clientHeight / GRID_ROWS;
-    enemyY = cellHeight * 1.5;
-    enemyX = Math.min(arena.clientWidth - cellWidth * 1.5, Math.max(cellWidth * 1.5, enemyX));
+    enemyX = (enemyCol + 0.5) * cellWidth;
+    enemyY = (enemyRow + 0.5) * cellHeight;
     renderEnemy();
     renderPlayer();
   });
