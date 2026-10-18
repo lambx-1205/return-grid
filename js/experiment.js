@@ -774,8 +774,10 @@
   restartButton.addEventListener("click", restartGame);
   gameoverRestart.addEventListener("click", restartGame);
 
-  window.addEventListener("keydown", onKeyDown);
-  window.addEventListener("keyup", onKeyUp);
+  // Capture controls early: WASD / arrows / Space should never fall through
+  // to browser defaults such as text selection or page scrolling during play.
+  window.addEventListener("keydown", onKeyDown, { capture: true });
+  window.addEventListener("keyup", onKeyUp, { capture: true });
   window.addEventListener("blur", clearKeys);
   window.addEventListener("resize", () => {
     if (!gameStarted) return;
