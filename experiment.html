@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#080b18">
   <title>RETURN GRID | Movement Test</title>
-  <link rel="stylesheet" href="css/style.css?v=20261019-devil-fox-ui-v6">
-  <script src="js/experiment.js?v=20261019-devil-fox-ui-v6" defer></script>
+  <link rel="stylesheet" href="css/style.css?v=20261019-chameleon-fix-v7">
+  <script src="js/experiment.js?v=20261019-chameleon-fix-v7" defer></script>
 </head>
 <body class="page page-experiment">
   <div class="scanlines" aria-hidden="true"></div>
@@ -32,7 +32,7 @@
               <span class="setup-index">CONFIGURATION / 01</span>
               <h2 id="setup-heading">ENEMY <span>CONFIGURATION</span></h2>
             </div>
-            <span class="setup-availability"><span class="status-dot"></span> 14 TYPES AVAILABLE</span>
+            <span class="setup-availability"><span class="status-dot"></span> 15 TYPES AVAILABLE</span>
           </div>
           <p class="setup-description">出現させる敵ユニットと配備数を指定して、実験を開始する。</p>
           <p id="enemy-total-count" class="enemy-total-count" aria-live="polite">3 / 20 UNITS DEPLOYED</p>
@@ -324,7 +324,7 @@
               <div class="enemy-preview-text">
                 <span class="unit-index">ENEMY TYPE / 13</span><h3>FOX</h3><p>Front-guarding hunter</p>
                 <div class="unit-stats" aria-label="FOXの性能">
-                  <span>HP <strong>4</strong></span><span>SCORE <strong>1600</strong></span><span>SPEED <strong>×1.3</strong></span><span>TURN <strong>追尾 60%</strong></span>
+                  <span>HP <strong>3</strong></span><span>SCORE <strong>1600</strong></span><span>SPEED <strong>×1.3</strong></span><span>TURN <strong>追尾 60%</strong></span>
                 </div>
               </div>
               <div class="enemy-count-control">
@@ -347,7 +347,7 @@
               <div class="enemy-preview-text">
                 <span class="unit-index">ENEMY TYPE / 14</span><h3>ACID FOX</h3><p>Guarding toxic shooter</p>
                 <div class="unit-stats" aria-label="ACID FOXの性能">
-                  <span>HP <strong>8</strong></span><span>SCORE <strong>6400</strong></span><span>SPEED <strong>×1.5</strong></span><span>TURN <strong>追尾 90%</strong></span>
+                  <span>HP <strong>5</strong></span><span>SCORE <strong>6400</strong></span><span>SPEED <strong>×1.5</strong></span><span>TURN <strong>追尾 90%</strong></span>
                 </div>
               </div>
               <div class="enemy-count-control">
@@ -356,6 +356,29 @@
                   <button id="enemy-acidfox-count-decrease" class="quantity-button" type="button" aria-label="ACID FOXの数を減らす">−</button>
                   <output id="enemy-acidfox-count-value" aria-live="polite">0</output>
                   <button id="enemy-acidfox-count-increase" class="quantity-button" type="button" aria-label="ACID FOXの数を増やす">+</button>
+                </div>
+                <span class="count-hint">MIN 0 <span aria-hidden="true">/</span> MAX 8 UNITS</span>
+              </div>
+            </div>
+            <div class="enemy-config-card">
+              <div class="enemy-preview-portrait enemy-preview-portrait--chameleon">
+                <div class="enemy-drone enemy-chameleon enemy-preview-drone" role="img" aria-label="敵キャラクター、カメレオン">
+                  <span class="drone-aura" aria-hidden="true"></span><span class="drone-ring" aria-hidden="true"></span><span class="drone-eye" aria-hidden="true"></span>
+                  <span class="drone-light drone-light-left" aria-hidden="true"></span><span class="drone-light drone-light-right" aria-hidden="true"></span>
+                </div>
+              </div>
+              <div class="enemy-preview-text">
+                <span class="unit-index">ENEMY TYPE / 15</span><h3>CHAMELEON</h3><p>Temporary player disguise</p>
+                <div class="unit-stats" aria-label="カメレオンの性能">
+                  <span>HP <strong>2</strong></span><span>SCORE <strong>800</strong></span><span>SPEED <strong>×1</strong></span><span>TURN <strong>30%</strong></span>
+                </div>
+              </div>
+              <div class="enemy-count-control">
+                <label class="count-label" for="enemy-chameleon-count-value">DEPLOYMENT COUNT</label>
+                <div class="quantity-stepper">
+                  <button id="enemy-chameleon-count-decrease" class="quantity-button" type="button" aria-label="カメレオンの数を減らす">−</button>
+                  <output id="enemy-chameleon-count-value" aria-live="polite">0</output>
+                  <button id="enemy-chameleon-count-increase" class="quantity-button" type="button" aria-label="カメレオンの数を増やす">+</button>
                 </div>
                 <span class="count-hint">MIN 0 <span aria-hidden="true">/</span> MAX 8 UNITS</span>
               </div>
