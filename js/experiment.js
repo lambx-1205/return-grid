@@ -69,9 +69,11 @@
   let previousTime = 0;
   const INITIAL_LIVES = 5;
   const RESPAWN_DELAY_MS = 3000;
+  const RESPAWN_INVINCIBILITY_MS = 3000;
   let lives = INITIAL_LIVES;
   let gameState = "configuring";
   let respawnEndsAt = 0;
+  let invincibleUntil = 0;
 
   const projectile = {
     active: false,
@@ -345,8 +347,9 @@
     renderScore();
     gameState = "playing";
     respawnEndsAt = 0;
+    invincibleUntil = 0;
     respawnOverlay.hidden = true;
-    player.classList.remove("is-dying", "is-respawning", "is-moving", "moving-left", "moving-right", "moving-up", "moving-down");
+    player.classList.remove("is-dying", "is-respawning", "is-invincible", "is-moving", "moving-left", "moving-right", "moving-up", "moving-down");
     player.style.setProperty("--trail-x", "0px");
     player.style.setProperty("--trail-y", "0px");
     gameoverOverlay.hidden = true;
@@ -364,8 +367,8 @@
     movementStatus.textContent = "GAMEOVER";
   }
 
-  function handlePlayerEnemyCollision() {
-    if (gameState !== "playing") return;
+  function handlePlayerEnemyCollision(time) {
+    if (gameState !== "playing" || time < invincibleUntil) return;
     const playerHitRadius = Math.min(playerRadius.x, playerRadius.y) * 0.62;
     for (const unit of enemyUnits) {
       if (!unit.alive) continue;
@@ -403,7 +406,16 @@
       player.classList.remove("is-dying", "is-respawning");
       placePlayerAtStart();
       gameState = "playing";
+      invincibleUntil = time + RESPAWN_INVINCIBILITY_MS;
+      player.classList.add("is-invincible");
       movementStatus.textContent = "STANDBY";
+    }
+  }
+
+  function updateInvincibility(time) {
+    if (invincibleUntil > 0 && time >= invincibleUntil) {
+      invincibleUntil = 0;
+      player.classList.remove("is-invincible");
     }
   }
 
@@ -661,6 +673,8 @@
       return;
     }
 
+    updateInvincibility(time);
+
     let dx = 0;
     let dy = 0;
 
@@ -712,7 +726,7 @@
     for (const unit of enemyUnits) updateEnemy(unit, delta);
     updateProjectile(delta);
     checkProjectileEnemyCollision();
-    handlePlayerEnemyCollision();
+    handlePlayerEnemyCollision(time);
     renderPlayer();
     window.requestAnimationFrame(frame);
   }
