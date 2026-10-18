@@ -29,7 +29,11 @@
     scout: { value: document.querySelector("#enemy-scout-count-value"), decrease: document.querySelector("#enemy-scout-count-decrease"), increase: document.querySelector("#enemy-scout-count-increase") },
     hunter: { value: document.querySelector("#enemy-hunter-count-value"), decrease: document.querySelector("#enemy-hunter-count-decrease"), increase: document.querySelector("#enemy-hunter-count-increase") },
     feint: { value: document.querySelector("#enemy-feint-count-value"), decrease: document.querySelector("#enemy-feint-count-decrease"), increase: document.querySelector("#enemy-feint-count-increase") },
-    photon: { value: document.querySelector("#enemy-photon-count-value"), decrease: document.querySelector("#enemy-photon-count-decrease"), increase: document.querySelector("#enemy-photon-count-increase") }
+    photon: { value: document.querySelector("#enemy-photon-count-value"), decrease: document.querySelector("#enemy-photon-count-decrease"), increase: document.querySelector("#enemy-photon-count-increase") },
+    reaper: { value: document.querySelector("#enemy-reaper-count-value"), decrease: document.querySelector("#enemy-reaper-count-decrease"), increase: document.querySelector("#enemy-reaper-count-increase") },
+    dash: { value: document.querySelector("#enemy-dash-count-value"), decrease: document.querySelector("#enemy-dash-count-decrease"), increase: document.querySelector("#enemy-dash-count-increase") },
+    zigzag: { value: document.querySelector("#enemy-zigzag-count-value"), decrease: document.querySelector("#enemy-zigzag-count-decrease"), increase: document.querySelector("#enemy-zigzag-count-increase") },
+    fade: { value: document.querySelector("#enemy-fade-count-value"), decrease: document.querySelector("#enemy-fade-count-decrease"), increase: document.querySelector("#enemy-fade-count-increase") }
   };
   const gameStartButton = document.querySelector("#game-start-button");
 
@@ -64,16 +68,18 @@
     scout: { hp: 1, points: 200, speed: 2, turnChance: 0.65 },
     hunter: { hp: 2, points: 500, speed: 0.85, behavior: "chase", fallbackTurnChance: 0.40 },
     feint: { hp: 2, points: 600, speed: 1.20, behavior: "flee", fallbackTurnChance: 0.40 },
-    photon: { hp: 2, points: 1000, speed: 4, turnChance: 0.10 }
+    photon: { hp: 2, points: 1000, speed: 4, turnChance: 0.10 },
+    reaper: { hp: 5, points: 1600, speed: 0.9, turnChance: 0.50, behavior: "reaper" },
+    dash: { hp: 2, points: 500, speed: 1, turnChance: 0.30, behavior: "dash", alertSpeed: 2.5 },
+    zigzag: { hp: 1, points: 400, speed: 2.65, turnChance: 0.50, behavior: "zigzag", ignoresSoftBlocks: true },
+    fade: { hp: 4, points: 1200, speed: 1.35, turnChance: 0.35, behavior: "fade" }
   };
-  const configuredEnemyCounts = { drone: 3, tank: 1, scout: 1, hunter: 1, feint: 1, photon: 1 };
+  const configuredEnemyCounts = { drone: 3, tank: 0, scout: 0, hunter: 0, feint: 0, photon: 0, reaper: 0, dash: 0, zigzag: 0, fade: 0 };
+  const MAX_TOTAL_ENEMIES = 20;
   const ENEMY_COUNT_LIMITS = {
-    drone: { min: 1, max: 8 },
-    tank: { min: 0, max: 8 },
-    scout: { min: 0, max: 8 },
-    hunter: { min: 0, max: 8 },
-    feint: { min: 0, max: 8 },
-    photon: { min: 0, max: 8 }
+    drone: { min: 0, max: 8 }, tank: { min: 0, max: 8 }, scout: { min: 0, max: 8 },
+    hunter: { min: 0, max: 8 }, feint: { min: 0, max: 8 }, photon: { min: 0, max: 8 },
+    reaper: { min: 0, max: 8 }, dash: { min: 0, max: 8 }, zigzag: { min: 0, max: 8 }, fade: { min: 0, max: 8 }
   };
   let gameStarted = false;
   const enemyUnits = [];
@@ -100,6 +106,8 @@
   let respawnEndsAt = 0;
   let invincibleUntil = 0;
 
+  const enemyProjectiles = [];
+  const REAPER_FIRE_INTERVAL_MS = 3600;
   const projectile = {
     active: false,
     mode: "outbound",
@@ -143,10 +151,13 @@
   }
 
   function isWalkableCell(row, col) {
-    return row >= 0 && row < GRID_ROWS &&
-      col >= 0 && col < GRID_COLUMNS &&
-      STAGE_MAP[row][col] === "0" &&
-      !softBlockCells.has(cellKey(row, col));
+    return row >= 0 && row < GRID_ROWS && col >= 0 && col < GRID_COLUMNS &&
+      STAGE_MAP[row][col] === "0" && !softBlockCells.has(cellKey(row, col));
+  }
+
+  function canEnemyEnterCell(unit, row, col) {
+    return row >= 0 && row < GRID_ROWS && col >= 0 && col < GRID_COLUMNS &&
+      STAGE_MAP[row][col] === "0" && (unit.type.ignoresSoftBlocks || !softBlockCells.has(cellKey(row, col)));
   }
 
   const ENEMY_DIRECTIONS = [
@@ -176,6 +187,7 @@
         }
         element.classList.remove(
           "enemy-tank", "enemy-scout", "enemy-hunter", "enemy-feint", "enemy-photon",
+          "enemy-reaper", "enemy-dash", "enemy-zigzag", "enemy-fade",
           "is-exploding", "tank-hp-3", "tank-hp-2", "tank-hp-1"
         );
         if (typeKey !== "drone") element.classList.add("enemy-" + typeKey);
@@ -187,7 +199,9 @@
         const unit = {
           element, type, typeKey, hp: type.hp, alive: true, x: 0, y: 0, row: 1, col: 1,
           directionX: unitIndex % 2 === 0 ? 1 : -1, directionY: 0,
-          points: type.points, speed: type.speed
+          points: type.points, speed: type.speed,
+          nextShotAt: performance.now() + 1800 + Math.random() * 1800,
+          alerting: false
         };
         element.addEventListener("animationend", event => {
           if (event.animationName === "enemy-drone-explode" && !unit.alive) element.hidden = true;
@@ -242,6 +256,8 @@
       occupied.push(cell);
       unit.alive = true;
       unit.hp = unit.type.hp;
+      unit.nextShotAt = performance.now() + 1800 + Math.random() * 1800;
+      unit.alerting = false;
       unit.element.hidden = false;
       unit.element.setAttribute("aria-hidden", "false");
       unit.element.classList.remove("is-exploding");
@@ -251,7 +267,7 @@
       unit.x = (cell.col + 0.5) * cellWidth;
       unit.y = (cell.row + 0.5) * cellHeight;
       const directions = ENEMY_DIRECTIONS.filter(direction =>
-        isWalkableCell(unit.row + direction.y, unit.col + direction.x)
+        canEnemyEnterCell(unit, unit.row + direction.y, unit.col + direction.x)
       );
       const chosen = directions[Math.floor(Math.random() * directions.length)] || { x: 1, y: 0 };
       unit.directionX = chosen.x;
@@ -276,7 +292,7 @@
   function chooseEnemyDirectionAtWall(unit) {
     const sideOptions = ENEMY_DIRECTIONS.filter(direction =>
       direction.x * unit.directionX + direction.y * unit.directionY === 0 &&
-      isWalkableCell(unit.row + direction.y, unit.col + direction.x)
+      canEnemyEnterCell(unit, unit.row + direction.y, unit.col + direction.x)
     );
     const turnChance = unit.type.turnChance ?? unit.type.fallbackTurnChance ?? 0.40;
     if (sideOptions.length > 0 && Math.random() < turnChance) {
@@ -365,32 +381,51 @@
     return bestOptions[Math.floor(Math.random() * bestOptions.length)].direction;
   }
 
-  function updateEnemy(unit, delta) {
+  function isDashLineClear(unit, playerCell) {
+    if (unit.row !== playerCell.row && unit.col !== playerCell.col) return false;
+    const dr = Math.sign(playerCell.row - unit.row), dc = Math.sign(playerCell.col - unit.col);
+    let row = unit.row + dr, col = unit.col + dc;
+    while (row !== playerCell.row || col !== playerCell.col) {
+      if (STAGE_MAP[row]?.[col] !== "0" || softBlockCells.has(cellKey(row, col))) return false;
+      row += dr; col += dc;
+    }
+    return true;
+  }
+
+  function updateEnemy(unit, delta, time = performance.now()) {
     if (!unit.alive) return;
     const cellWidth = arena.clientWidth / GRID_COLUMNS;
     const cellHeight = arena.clientHeight / GRID_ROWS;
-    let remaining = ENEMY_SPEED * unit.speed * delta;
+    const playerCell = getPlayerGridCell(cellWidth, cellHeight);
+    unit.alerting = unit.type.behavior === "dash" && playerCell && isDashLineClear(unit, playerCell);
+    let remaining = ENEMY_SPEED * (unit.alerting ? unit.type.alertSpeed : unit.speed) * delta;
+    if (unit.type.behavior === "reaper" && time >= unit.nextShotAt) {
+      launchEnemyBoomerang(unit);
+      unit.nextShotAt = time + REAPER_FIRE_INTERVAL_MS + Math.random() * 900;
+    }
     let guard = 0;
     while (remaining > 0 && guard < 8) {
       const centerX = (unit.col + 0.5) * cellWidth;
       const centerY = (unit.row + 0.5) * cellHeight;
       const atCellCenter = Math.abs(unit.x - centerX) < 0.01 && Math.abs(unit.y - centerY) < 0.01;
-      if (atCellCenter && unit.type.behavior) {
-        const strategicDirection = chooseStrategicDirection(unit, cellWidth, cellHeight);
-        if (strategicDirection) {
-          unit.directionX = strategicDirection.x;
-          unit.directionY = strategicDirection.y;
+      if (atCellCenter && unit.type.behavior === "zigzag") {
+        const exits = ENEMY_DIRECTIONS.filter(d => canEnemyEnterCell(unit, unit.row + d.y, unit.col + d.x));
+        if (exits.length >= 3 && Math.random() < unit.type.turnChance) {
+          const options = exits.filter(d => d.x !== unit.directionX || d.y !== unit.directionY);
+          if (options.length) { const chosen = options[Math.floor(Math.random() * options.length)]; unit.directionX = chosen.x; unit.directionY = chosen.y; }
         }
+      } else if (atCellCenter && unit.type.behavior) {
+        const strategicDirection = chooseStrategicDirection(unit, cellWidth, cellHeight);
+        if (strategicDirection) { unit.directionX = strategicDirection.x; unit.directionY = strategicDirection.y; }
       }
-
       let nextRow = unit.row + unit.directionY;
       let nextCol = unit.col + unit.directionX;
-      if (!isWalkableCell(nextRow, nextCol)) {
+      if (!canEnemyEnterCell(unit, nextRow, nextCol)) {
         chooseEnemyDirectionAtWall(unit);
         nextRow = unit.row + unit.directionY;
         nextCol = unit.col + unit.directionX;
       }
-      if (!isWalkableCell(nextRow, nextCol)) break;
+      if (!canEnemyEnterCell(unit, nextRow, nextCol)) break;
       const targetX = (nextCol + 0.5) * cellWidth;
       const targetY = (nextRow + 0.5) * cellHeight;
       const offsetX = targetX - unit.x;
@@ -446,6 +481,69 @@
   function collectEnemyPoints(unit) {
     score += unit.points;
     renderScore();
+  }
+
+  function leaveFadeTrail(unit) {
+    const trail = unit.element.cloneNode(true);
+    trail.removeAttribute("id"); trail.classList.add("enemy-fade-trail"); trail.classList.remove("is-exploding");
+    trail.hidden = false; trail.setAttribute("aria-hidden", "true");
+    trail.style.left = unit.x + "px"; trail.style.top = unit.y + "px"; arena.appendChild(trail);
+    window.setTimeout(() => trail.remove(), 650);
+  }
+
+  function teleportFade(unit) {
+    const options = [], cw = arena.clientWidth / GRID_COLUMNS, ch = arena.clientHeight / GRID_ROWS;
+    for (let row = 1; row < GRID_ROWS - 1; row++) for (let col = 1; col < GRID_COLUMNS - 1; col++) {
+      const md = Math.abs(row - unit.row) + Math.abs(col - unit.col);
+      if (md < 2 || md > 6 || !isWalkableCell(row, col)) continue;
+      if (Math.hypot((col + .5) * cw - x, (row + .5) * ch - y) < cw * 1.1) continue;
+      options.push({row, col});
+    }
+    if (!options.length) return;
+    leaveFadeTrail(unit);
+    const cell = options[Math.floor(Math.random() * options.length)];
+    unit.row = cell.row; unit.col = cell.col; unit.x = (cell.col + .5) * cw; unit.y = (cell.row + .5) * ch;
+    renderEnemy(unit);
+  }
+
+  function launchEnemyBoomerang(unit) {
+    const element = projectileElement.cloneNode(true);
+    element.removeAttribute("id"); element.classList.add("enemy-projectile");
+    element.hidden = false; element.setAttribute("aria-hidden", "true"); arena.appendChild(element);
+    const dx = x - unit.x, dy = y - unit.y;
+    const directionX = Math.abs(dx) >= Math.abs(dy) ? (Math.sign(dx) || unit.directionX) : 0;
+    const directionY = directionX === 0 ? (Math.sign(dy) || unit.directionY) : 0;
+    const cellSize = Math.min(arena.clientWidth / GRID_COLUMNS, arena.clientHeight / GRID_ROWS);
+    enemyProjectiles.push({element, owner: unit, x: unit.x, y: unit.y, directionX, directionY, distance: 0, maxDistance: cellSize * 3, returning: false});
+  }
+
+  function updateEnemyBoomerangs(delta, time) {
+    for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
+      const shot = enemyProjectiles[i];
+      if (!shot.owner.alive) { shot.element.remove(); enemyProjectiles.splice(i, 1); continue; }
+      if (!shot.returning) {
+        const step = 300 * delta;
+        shot.x += shot.directionX * step; shot.y += shot.directionY * step; shot.distance += step;
+        if (shot.distance >= shot.maxDistance) shot.returning = true;
+      } else {
+        const dx = shot.owner.x - shot.x, dy = shot.owner.y - shot.y, d = Math.hypot(dx, dy), step = 300 * delta;
+        if (d <= step + 5) { shot.element.remove(); enemyProjectiles.splice(i, 1); continue; }
+        shot.x += dx / d * step; shot.y += dy / d * step;
+      }
+      shot.element.style.left = shot.x + "px"; shot.element.style.top = shot.y + "px";
+      if (gameState === "playing" && time >= invincibleUntil && Math.hypot(x - shot.x, y - shot.y) <= Math.min(playerRadius.x, playerRadius.y) * .62 + 17) {
+        shot.element.remove(); enemyProjectiles.splice(i, 1); takePlayerHit(time);
+      }
+    }
+  }
+
+  function takePlayerHit(time) {
+    if (gameState !== "playing" || time < invincibleUntil) return;
+    clearKeys(); resetProjectile();
+    if (lives <= 0) { gameState = "dying-gameover"; player.classList.add("is-dying"); return; }
+    lives -= 1; renderLives(); gameState = "respawning"; respawnEndsAt = time + RESPAWN_DELAY_MS;
+    respawnCountdown.textContent = "3"; respawnOverlay.hidden = false;
+    movementStatus.textContent = "RESPAWNING"; player.classList.add("is-dying");
   }
 
   function bounds() {
@@ -535,24 +633,7 @@
     const playerHitRadius = Math.min(playerRadius.x, playerRadius.y) * 0.62;
     for (const unit of enemyUnits) {
       if (!unit.alive) continue;
-      const enemyHitRadius = unit.radius || ENEMY_BASE_SIZE / 2;
-      if (Math.hypot(x - unit.x, y - unit.y) > playerHitRadius + enemyHitRadius) continue;
-      clearKeys();
-      resetProjectile();
-      if (lives <= 0) {
-        gameState = "dying-gameover";
-        player.classList.add("is-dying");
-        return;
-      }
-      lives -= 1;
-      renderLives();
-      gameState = "respawning";
-      respawnEndsAt = performance.now() + RESPAWN_DELAY_MS;
-      respawnCountdown.textContent = "3";
-      respawnOverlay.hidden = false;
-      movementStatus.textContent = "RESPAWNING";
-      player.classList.add("is-dying");
-      return;
+      if (Math.hypot(x - unit.x, y - unit.y) <= playerHitRadius + (unit.radius || ENEMY_BASE_SIZE / 2)) { takePlayerHit(time); return; }
     }
   }
 
@@ -982,7 +1063,7 @@
     if (!unit.alive) return;
     unit.hp -= 1;
     renderEnemyAppearance(unit);
-    if (unit.hp > 0) return;
+    if (unit.hp > 0) { if (unit.typeKey === "fade") teleportFade(unit); return; }
     unit.alive = false;
     unit.element.setAttribute("aria-hidden", "true");
     unit.element.classList.add("is-exploding");
@@ -1103,6 +1184,7 @@
 
     for (const unit of enemyUnits) updateEnemy(unit, delta);
     updateProjectile(delta);
+    updateEnemyBoomerangs(delta, time);
     checkProjectileSoftBlockCollision(time);
     checkProjectileEnemyCollision(time);
     handlePlayerEnemyCollision(time);
@@ -1114,9 +1196,12 @@
     const controls = enemyCountControls[typeKey];
     const limits = ENEMY_COUNT_LIMITS[typeKey];
     const count = configuredEnemyCounts[typeKey];
+    const total = Object.values(configuredEnemyCounts).reduce((sum, n) => sum + n, 0);
     controls.value.textContent = String(count);
     controls.decrease.disabled = count <= limits.min;
-    controls.increase.disabled = count >= limits.max;
+    controls.increase.disabled = count >= limits.max || total >= MAX_TOTAL_ENEMIES;
+    const totalLabel = document.querySelector("#enemy-total-count");
+    if (totalLabel) totalLabel.textContent = total + " / " + MAX_TOTAL_ENEMIES + " UNITS DEPLOYED";
   }
 
   function renderEnemyCountControls() {
@@ -1156,11 +1241,12 @@
     const limits = ENEMY_COUNT_LIMITS[typeKey];
     controls.decrease.addEventListener("click", () => {
       configuredEnemyCounts[typeKey] = Math.max(limits.min, configuredEnemyCounts[typeKey] - 1);
-      renderEnemyCountControl(typeKey);
+      renderEnemyCountControls();
     });
     controls.increase.addEventListener("click", () => {
-      configuredEnemyCounts[typeKey] = Math.min(limits.max, configuredEnemyCounts[typeKey] + 1);
-      renderEnemyCountControl(typeKey);
+      const total = Object.values(configuredEnemyCounts).reduce((sum, n) => sum + n, 0);
+      if (total < MAX_TOTAL_ENEMIES) configuredEnemyCounts[typeKey] = Math.min(limits.max, configuredEnemyCounts[typeKey] + 1);
+      renderEnemyCountControls();
     });
   }
   gameStartButton.addEventListener("click", startGame);
