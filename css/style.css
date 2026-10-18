@@ -410,6 +410,20 @@ h1 span {
   box-shadow: 0 0 16px rgba(255, 30, 67, .12);
   backdrop-filter: blur(5px);
 }
+.score-label {
+  color: #8cfbe9;
+  font-size: .58rem;
+  font-weight: 850;
+  letter-spacing: .16em;
+}
+#score-count {
+  color: #d7fff8;
+  font-size: 1.25rem;
+  line-height: 1;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 10px rgba(66, 245, 233, .8);
+}
 .life-label {
   color: #ff9aaa;
   font-size: .58rem;
@@ -430,6 +444,23 @@ h1 span {
   letter-spacing: .08em;
   white-space: nowrap;
   text-shadow: 0 0 7px rgba(255, 41, 77, .85);
+}
+.score-item {
+  position: absolute;
+  z-index: 2;
+  width: clamp(10px, 1.15vw, 18px);
+  height: clamp(10px, 1.15vw, 18px);
+  border: 1px solid rgba(206, 255, 246, .95);
+  border-radius: 4px;
+  background: linear-gradient(135deg, #fff8b8, #42f5e9 65%, #3d8cff);
+  box-shadow: 0 0 8px rgba(66, 245, 233, .9), 0 0 18px rgba(66, 245, 233, .35);
+  transform: translate(-50%, -50%) rotate(45deg);
+  animation: item-pulse 1.5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes item-pulse {
+  0%, 100% { filter: brightness(.9); box-shadow: 0 0 7px rgba(66, 245, 233, .7), 0 0 14px rgba(66, 245, 233, .25); }
+  50% { filter: brightness(1.45); box-shadow: 0 0 12px rgba(66, 245, 233, 1), 0 0 24px rgba(66, 245, 233, .5); }
 }
 .respawn-overlay {
   position: absolute;
