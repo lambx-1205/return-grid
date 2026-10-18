@@ -1657,8 +1657,8 @@ h1 span {
 
 /* Compact, scrollable enemy setup: the viewport stays usable as new types are added. */
 .stage-setup {
-  max-height: calc(100vh - 158px);
-  max-height: calc(100dvh - 158px);
+  max-height: calc(100vh - 290px);
+  max-height: calc(100dvh - 290px);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -1746,7 +1746,7 @@ h1 span {
 .enemy-drone.enemy-photon .drone-light { background:#fff; box-shadow:0 0 7px #fff,0 0 12px #b16aff; }
 
 @media (max-width: 800px) {
-  .stage-setup { max-height: calc(100vh - 138px); max-height: calc(100dvh - 138px); }
+  .stage-setup { max-height: calc(100vh - 250px); max-height: calc(100dvh - 250px); }
   .stage-setup .setup-panel { padding: 13px 12px; }
   .enemy-config-list .enemy-config-card,
   .enemy-config-list .enemy-config-card + .enemy-config-card {
@@ -1778,7 +1778,7 @@ h1 span {
   .enemy-config-list .count-hint { margin-top: 0; white-space: nowrap; }
 }
 @media (max-width: 520px) {
-  .stage-setup { margin: 4px auto 8px; max-height: calc(100vh - 132px); max-height: calc(100dvh - 132px); }
+  .stage-setup { margin: 4px auto 8px; max-height: calc(100vh - 220px); max-height: calc(100dvh - 220px); }
   .stage-setup .setup-panel { padding: 11px 9px; }
   .stage-setup .setup-panel h2 { font-size: 1.12rem; }
   .stage-setup .setup-description { font-size: .68rem; }
