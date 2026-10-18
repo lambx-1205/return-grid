@@ -98,6 +98,8 @@
     const cellHeight = arena.clientHeight / GRID_ROWS;
     const desiredSize = Math.min(cellWidth, cellHeight) * PLAYER_CELL_FRACTION;
     const scale = desiredSize / PLAYER_BASE_SIZE;
+    playerRadius.x = desiredSize / 2;
+    playerRadius.y = desiredSize / 2;
     player.style.setProperty("--player-scale", String(scale));
   }
 
@@ -106,6 +108,7 @@
     const cellHeight = arena.clientHeight / GRID_ROWS;
     const desiredSize = Math.min(cellWidth, cellHeight) * 0.72;
     for (const unit of enemyUnits) {
+      unit.radius = desiredSize / 2;
       unit.element.style.setProperty("--drone-scale", String(desiredSize / ENEMY_BASE_SIZE));
     }
   }
@@ -286,11 +289,7 @@
   }
 
   function bounds() {
-    // Use the visual, scaled size rather than the unscaled CSS box.
-    const rect = player.getBoundingClientRect();
-    playerRadius.x = rect.width / 2;
-    playerRadius.y = rect.height / 2;
-
+    // Player radius is cached by fitPlayerToGrid(), avoiding per-frame layout reads.
     const cellWidth = arena.clientWidth / GRID_COLUMNS;
     const cellHeight = arena.clientHeight / GRID_ROWS;
     // Keep the player inside the walkable cells, not inside the hard-block ring.
@@ -372,7 +371,7 @@
     const playerHitRadius = Math.min(playerRadius.x, playerRadius.y) * 0.62;
     for (const unit of enemyUnits) {
       if (!unit.alive) continue;
-      const enemyHitRadius = unit.element.getBoundingClientRect().width * 0.5;
+      const enemyHitRadius = unit.radius || ENEMY_BASE_SIZE / 2;
       if (Math.hypot(x - unit.x, y - unit.y) > playerHitRadius + enemyHitRadius) continue;
       clearKeys();
       resetProjectile();
@@ -617,7 +616,7 @@
     if (gameState !== "playing" || !projectile.active) return;
     for (const unit of enemyUnits) {
       if (!unit.alive) continue;
-      const enemyRadius = unit.element.getBoundingClientRect().width / 2;
+      const enemyRadius = unit.radius || ENEMY_BASE_SIZE / 2;
       const contactDistance = enemyRadius + PROJECTILE_SIZE / 2;
       if (Math.hypot(projectile.x - unit.x, projectile.y - unit.y) <= contactDistance) {
         projectile.active = false;
@@ -740,6 +739,8 @@
   function startGame() {
     if (gameStarted) return;
     gameStarted = true;
+    // Clear any selection left by a drag before gameplay takes keyboard input.
+    window.getSelection?.()?.removeAllRanges();
     stageSetup.hidden = true;
     gameplayView.hidden = false;
     stageTitle.innerHTML = "TEST <span>AREA</span>";
@@ -773,6 +774,16 @@
 
   restartButton.addEventListener("click", restartGame);
   gameoverRestart.addEventListener("click", restartGame);
+
+  // The play screen is an application surface, not selectable document text.
+  // The CSS rule handles normal cases; these guards cover browsers/extensions
+  // that still try to start text selection or native dragging.
+  document.addEventListener("selectstart", event => {
+    if (gameStarted) event.preventDefault();
+  }, true);
+  document.addEventListener("dragstart", event => {
+    if (gameStarted) event.preventDefault();
+  }, true);
 
   // Capture controls early: WASD / arrows / Space should never fall through
   // to browser defaults such as text selection or page scrolling during play.
