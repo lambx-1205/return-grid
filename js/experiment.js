@@ -43,7 +43,14 @@
     directionX: 0,
     directionY: -1,
     travelled: 0,
-    maxDistance: 0
+    maxDistance: 0,
+    turnElapsed: 0,
+    turnDuration: 0.22,
+    turnStartX: 0,
+    turnStartY: 0,
+    turnPerpX: 0,
+    turnPerpY: 0,
+    turnRadius: 0
   };
 
   function fitPlayerToGrid() {
@@ -102,8 +109,48 @@
   function renderProjectile() {
     projectileElement.hidden = !projectile.active;
     if (!projectile.active) return;
+    projectileElement.dataset.mode = projectile.mode;
     projectileElement.style.left = `${projectile.x}px`;
     projectileElement.style.top = `${projectile.y}px`;
+  }
+
+  function projectileBounds() {
+    const cellWidth = arena.clientWidth / GRID_COLUMNS;
+    const cellHeight = arena.clientHeight / GRID_ROWS;
+    const padding = PROJECTILE_SIZE / 2 + 1;
+    return {
+      minX: cellWidth + padding,
+      maxX: arena.clientWidth - cellWidth - padding,
+      minY: cellHeight + padding,
+      maxY: arena.clientHeight - cellHeight - padding,
+      cellSize: Math.min(cellWidth, cellHeight)
+    };
+  }
+
+  function beginTurnaround() {
+    projectile.mode = "turn";
+    projectile.turnElapsed = 0;
+    projectile.turnStartX = projectile.x;
+    projectile.turnStartY = projectile.y;
+
+    // Turn toward the arena center to leave room for a small semicircular arc.
+    let perpX = -projectile.directionY;
+    let perpY = projectile.directionX;
+    const centerX = arena.clientWidth / 2;
+    const centerY = arena.clientHeight / 2;
+    const towardCenter = perpX * (centerX - projectile.x) + perpY * (centerY - projectile.y);
+    if (towardCenter < 0) {
+      perpX *= -1;
+      perpY *= -1;
+    }
+
+    const safe = projectileBounds();
+    const roomX = perpX > 0 ? safe.maxX - projectile.x : perpX < 0 ? projectile.x - safe.minX : Infinity;
+    const roomY = perpY > 0 ? safe.maxY - projectile.y : perpY < 0 ? projectile.y - safe.minY : Infinity;
+    const room = Math.min(roomX, roomY);
+    projectile.turnPerpX = perpX;
+    projectile.turnPerpY = perpY;
+    projectile.turnRadius = Math.min(safe.cellSize * 0.16, Math.max(0, room / 2));
   }
 
   function launchProjectile() {
@@ -116,33 +163,37 @@
     projectile.directionY = facingY;
     projectile.travelled = 0;
 
-    const cellWidth = arena.clientWidth / GRID_COLUMNS;
-    const cellHeight = arena.clientHeight / GRID_ROWS;
-    const cellSize = Math.min(cellWidth, cellHeight);
-    const safeMinX = cellWidth + PROJECTILE_SIZE / 2 + 1;
-    const safeMaxX = arena.clientWidth - cellWidth - PROJECTILE_SIZE / 2 - 1;
-    const safeMinY = cellHeight + PROJECTILE_SIZE / 2 + 1;
-    const safeMaxY = arena.clientHeight - cellHeight - PROJECTILE_SIZE / 2 - 1;
+    const safe = projectileBounds();
     let availableDistance = 0;
-    if (facingX < 0) availableDistance = projectile.x - safeMinX;
-    else if (facingX > 0) availableDistance = safeMaxX - projectile.x;
-    else if (facingY < 0) availableDistance = projectile.y - safeMinY;
-    else availableDistance = safeMaxY - projectile.y;
-    projectile.maxDistance = Math.max(0, Math.min(cellSize * PROJECTILE_MAX_CELLS, availableDistance - 1));
+    if (facingX < 0) availableDistance = projectile.x - safe.minX;
+    else if (facingX > 0) availableDistance = safe.maxX - projectile.x;
+    else if (facingY < 0) availableDistance = projectile.y - safe.minY;
+    else availableDistance = safe.maxY - projectile.y;
+    projectile.maxDistance = Math.max(0, Math.min(safe.cellSize * PROJECTILE_MAX_CELLS, availableDistance - 1));
     renderProjectile();
   }
 
   function updateProjectile(delta) {
     if (!projectile.active) return;
+
     if (projectile.mode === "outbound") {
       const remaining = projectile.maxDistance - projectile.travelled;
       const step = Math.min(PROJECTILE_SPEED * delta, Math.max(0, remaining));
       projectile.x += projectile.directionX * step;
       projectile.y += projectile.directionY * step;
       projectile.travelled += step;
-      if (projectile.travelled >= projectile.maxDistance) projectile.mode = "return";
+      if (projectile.travelled >= projectile.maxDistance) beginTurnaround();
+    } else if (projectile.mode === "turn") {
+      projectile.turnElapsed = Math.min(projectile.turnElapsed + delta, projectile.turnDuration);
+      const progress = projectile.turnElapsed / projectile.turnDuration;
+      const angle = Math.PI * progress;
+      const forwardArc = projectile.turnRadius * Math.sin(angle);
+      const sideArc = projectile.turnRadius * (1 - Math.cos(angle));
+      projectile.x = projectile.turnStartX + projectile.directionX * forwardArc + projectile.turnPerpX * sideArc;
+      projectile.y = projectile.turnStartY + projectile.directionY * forwardArc + projectile.turnPerpY * sideArc;
+      if (progress >= 1) projectile.mode = "return";
     } else {
-      // Home toward the player current position; the walkable rectangle contains this path.
+      // Home toward the player only after the turn completes, avoiding an abrupt direction snap.
       const toPlayerX = x - projectile.x;
       const toPlayerY = y - projectile.y;
       const distance = Math.hypot(toPlayerX, toPlayerY);
@@ -154,6 +205,7 @@
         projectile.y += (toPlayerY / distance) * step;
       }
     }
+
     renderProjectile();
   }
 
