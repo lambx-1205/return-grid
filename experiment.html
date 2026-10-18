@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#080b18">
   <title>RETURN GRID | Movement Test</title>
-  <link rel="stylesheet" href="css/style.css?v=20261019-enemy-types-invincibility">
-  <script src="js/experiment.js?v=20261019-enemy-types-invincibility" defer></script>
+  <link rel="stylesheet" href="css/style.css?v=20261019-pathfind-enemies-scroll">
+  <script src="js/experiment.js?v=20261019-pathfind-enemies-scroll" defer></script>
 </head>
 <body class="page page-experiment">
   <div class="scanlines" aria-hidden="true"></div>
@@ -32,7 +32,7 @@
               <span class="setup-index">CONFIGURATION / 01</span>
               <h2 id="setup-heading">ENEMY <span>CONFIGURATION</span></h2>
             </div>
-            <span class="setup-availability"><span class="status-dot"></span> 3 TYPES AVAILABLE</span>
+            <span class="setup-availability"><span class="status-dot"></span> 6 TYPES AVAILABLE</span>
           </div>
           <p class="setup-description">出現させる敵ユニットと配備数を指定して、実験を開始する。</p>
 
@@ -102,6 +102,75 @@
                   <button id="enemy-scout-count-decrease" class="quantity-button" type="button" aria-label="スカウトの数を減らす">−</button>
                   <output id="enemy-scout-count-value" aria-live="polite">1</output>
                   <button id="enemy-scout-count-increase" class="quantity-button" type="button" aria-label="スカウトの数を増やす">+</button>
+                </div>
+                <span class="count-hint">MIN 0 <span aria-hidden="true">/</span> MAX 8 UNITS</span>
+              </div>
+            </div>
+            <div class="enemy-config-card">
+              <div class="enemy-preview-portrait enemy-preview-portrait--hunter">
+                <div class="enemy-drone enemy-hunter enemy-preview-drone" role="img" aria-label="敵キャラクター、ハンター">
+                  <span class="drone-aura" aria-hidden="true"></span><span class="drone-ring" aria-hidden="true"></span><span class="drone-eye" aria-hidden="true"></span>
+                  <span class="drone-light drone-light-left" aria-hidden="true"></span><span class="drone-light drone-light-right" aria-hidden="true"></span>
+                </div>
+              </div>
+              <div class="enemy-preview-text">
+                <span class="unit-index">ENEMY TYPE / 04</span><h3>HUNTER</h3><p>Pathfinding pursuit unit</p>
+                <div class="unit-stats" aria-label="ハンターの性能">
+                  <span>HP <strong>2</strong></span><span>SCORE <strong>500</strong></span><span>SPEED <strong>×0.85</strong></span><span>TURN <strong>追尾</strong></span>
+                </div>
+              </div>
+              <div class="enemy-count-control">
+                <label class="count-label" for="enemy-hunter-count-value">DEPLOYMENT COUNT</label>
+                <div class="quantity-stepper">
+                  <button id="enemy-hunter-count-decrease" class="quantity-button" type="button" aria-label="ハンターの数を減らす">−</button>
+                  <output id="enemy-hunter-count-value" aria-live="polite">1</output>
+                  <button id="enemy-hunter-count-increase" class="quantity-button" type="button" aria-label="ハンターの数を増やす">+</button>
+                </div>
+                <span class="count-hint">MIN 0 <span aria-hidden="true">/</span> MAX 8 UNITS</span>
+              </div>
+            </div>
+            <div class="enemy-config-card">
+              <div class="enemy-preview-portrait enemy-preview-portrait--feint">
+                <div class="enemy-drone enemy-feint enemy-preview-drone" role="img" aria-label="敵キャラクター、フェイント">
+                  <span class="drone-aura" aria-hidden="true"></span><span class="drone-ring" aria-hidden="true"></span><span class="drone-eye" aria-hidden="true"></span>
+                  <span class="drone-light drone-light-left" aria-hidden="true"></span><span class="drone-light drone-light-right" aria-hidden="true"></span>
+                </div>
+              </div>
+              <div class="enemy-preview-text">
+                <span class="unit-index">ENEMY TYPE / 05</span><h3>FEINT</h3><p>Evasive pathfinding unit</p>
+                <div class="unit-stats" aria-label="フェイントの性能">
+                  <span>HP <strong>2</strong></span><span>SCORE <strong>600</strong></span><span>SPEED <strong>×1.20</strong></span><span>TURN <strong>逃走</strong></span>
+                </div>
+              </div>
+              <div class="enemy-count-control">
+                <label class="count-label" for="enemy-feint-count-value">DEPLOYMENT COUNT</label>
+                <div class="quantity-stepper">
+                  <button id="enemy-feint-count-decrease" class="quantity-button" type="button" aria-label="フェイントの数を減らす">−</button>
+                  <output id="enemy-feint-count-value" aria-live="polite">1</output>
+                  <button id="enemy-feint-count-increase" class="quantity-button" type="button" aria-label="フェイントの数を増やす">+</button>
+                </div>
+                <span class="count-hint">MIN 0 <span aria-hidden="true">/</span> MAX 8 UNITS</span>
+              </div>
+            </div>
+            <div class="enemy-config-card">
+              <div class="enemy-preview-portrait enemy-preview-portrait--photon">
+                <div class="enemy-drone enemy-photon enemy-preview-drone" role="img" aria-label="敵キャラクター、フォトン">
+                  <span class="drone-aura" aria-hidden="true"></span><span class="drone-ring" aria-hidden="true"></span><span class="drone-eye" aria-hidden="true"></span>
+                  <span class="drone-light drone-light-left" aria-hidden="true"></span><span class="drone-light drone-light-right" aria-hidden="true"></span>
+                </div>
+              </div>
+              <div class="enemy-preview-text">
+                <span class="unit-index">ENEMY TYPE / 06</span><h3>PHOTON</h3><p>High-velocity energy unit</p>
+                <div class="unit-stats" aria-label="フォトンの性能">
+                  <span>HP <strong>2</strong></span><span>SCORE <strong>1000</strong></span><span>SPEED <strong>×4</strong></span><span>TURN <strong>10%</strong></span>
+                </div>
+              </div>
+              <div class="enemy-count-control">
+                <label class="count-label" for="enemy-photon-count-value">DEPLOYMENT COUNT</label>
+                <div class="quantity-stepper">
+                  <button id="enemy-photon-count-decrease" class="quantity-button" type="button" aria-label="フォトンの数を減らす">−</button>
+                  <output id="enemy-photon-count-value" aria-live="polite">1</output>
+                  <button id="enemy-photon-count-increase" class="quantity-button" type="button" aria-label="フォトンの数を増やす">+</button>
                 </div>
                 <span class="count-hint">MIN 0 <span aria-hidden="true">/</span> MAX 8 UNITS</span>
               </div>
