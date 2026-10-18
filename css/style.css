@@ -371,7 +371,7 @@ h1 span {
   position: relative;
   isolation: isolate;
   flex: 0 0 auto;
-  width: min(95.833333%, calc(191.666667dvh - 575px));
+  width: min(95.833333%, calc(191.666667dvh - 700px));
   height: auto;
   min-height: 0;
   aspect-ratio: 23 / 11;
@@ -389,7 +389,7 @@ h1 span {
 }
 
 .arena-hud-row {
-  width: min(95.833333%, calc(191.666667dvh - 575px));
+  width: min(95.833333%, calc(191.666667dvh - 700px));
   margin-inline: auto;
   display: flex;
   justify-content: flex-end;
