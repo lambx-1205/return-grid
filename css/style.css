@@ -880,14 +880,14 @@ h1 span {
     transform: translate(-50%, -50%) scale(var(--drone-scale, 1));
   }
   58% {
-    opacity: .8;
-    filter: brightness(2.2) drop-shadow(0 0 15px rgba(255, 35, 70, .95));
-    transform: translate(-50%, -50%) scale(var(--drone-scale, 1));
+    opacity: .82;
+    filter: brightness(2.4) drop-shadow(0 0 19px rgba(255, 35, 70, .95));
+    transform: translate(-50%, -50%) scale(var(--drone-scale, 1)) scale(1.45) rotate(18deg);
   }
   100% {
     opacity: 0;
-    filter: brightness(2.8) drop-shadow(0 0 24px rgba(255, 35, 70, 0));
-    transform: translate(-50%, -50%) scale(var(--drone-scale, 1));
+    filter: brightness(3.2) drop-shadow(0 0 28px rgba(255, 35, 70, 0));
+    transform: translate(-50%, -50%) scale(var(--drone-scale, 1)) scale(1.9) rotate(38deg);
   }
 }
 @keyframes enemy-drone-flash {
