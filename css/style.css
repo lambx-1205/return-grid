@@ -1610,3 +1610,46 @@ h1 span {
   .attack-cooldown__ring { width: 31px; height: 31px; flex-basis: 31px; }
   .attack-cooldown__label { font-size: .48rem; }
 }
+
+
+/* Config cards for three enemy types. */
+.enemy-config-list { margin-top: 20px; }
+.enemy-config-list .enemy-config-card { margin-top: 0; }
+.enemy-config-list .enemy-config-card + .enemy-config-card { margin-top: 12px; }
+.enemy-preview-portrait--tank {
+  border-color: rgba(189,213,231,.34);
+  background: linear-gradient(rgba(161,202,230,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(161,202,230,.08) 1px,transparent 1px),radial-gradient(circle,rgba(126,183,220,.17),transparent 68%),rgba(7,13,24,.82);
+  background-size: 14px 14px,14px 14px,auto,auto;
+}
+.enemy-preview-portrait--scout {
+  border-color: rgba(87,224,255,.31);
+  background: linear-gradient(rgba(87,224,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(87,224,255,.07) 1px,transparent 1px),radial-gradient(circle,rgba(36,187,255,.14),transparent 68%),rgba(5,10,25,.8);
+  background-size: 14px 14px,14px 14px,auto,auto;
+}
+.enemy-drone.enemy-tank {
+  --tank-armor-light:#c8dce9; --tank-armor-mid:#698ba3; --tank-armor-dark:#263f54; --tank-core:#d9f3ff;
+  border: 2px solid var(--tank-armor-light);
+  border-radius: 22% 22% 27% 27% / 25% 25% 23% 23%;
+  background: linear-gradient(135deg,rgba(255,255,255,.32),transparent 24% 64%,rgba(0,0,0,.25)),repeating-linear-gradient(45deg,transparent 0 7px,rgba(255,255,255,.055) 8px 9px),linear-gradient(145deg,var(--tank-armor-light) 0%,var(--tank-armor-mid) 26%,#27394c 56%,var(--tank-armor-dark) 100%);
+  box-shadow: inset 0 0 0 3px rgba(5,14,24,.88),inset 0 0 0 5px var(--tank-armor-mid),inset 0 -5px 0 rgba(0,0,0,.65),0 0 7px var(--tank-glow,rgba(126,190,228,.62)),0 0 18px var(--tank-glow,rgba(126,190,228,.24));
+  overflow: visible;
+}
+.enemy-drone.enemy-tank.tank-hp-3 { --tank-glow:rgba(126,190,228,.62); }
+.enemy-drone.enemy-tank.tank-hp-2 { --tank-armor-light:#ffe1a1; --tank-armor-mid:#ba853b; --tank-armor-dark:#54331b; --tank-core:#fff3bf; --tank-glow:rgba(255,179,63,.72); }
+.enemy-drone.enemy-tank.tank-hp-1 { --tank-armor-light:#ff9d78; --tank-armor-mid:#ce4c35; --tank-armor-dark:#4b191d; --tank-core:#fff0c2; --tank-glow:rgba(255,74,53,.86); }
+.enemy-drone.enemy-tank .drone-aura { inset:-6px; border-color:var(--tank-armor-mid); border-radius:25%; box-shadow:0 0 9px var(--tank-glow),inset 0 0 8px var(--tank-glow); }
+.enemy-drone.enemy-tank .drone-ring { inset:5px 4px; border:2px solid var(--tank-armor-light); border-left-color:var(--tank-armor-dark); border-right-color:var(--tank-armor-dark); border-radius:7px; transform:rotate(45deg); box-shadow:0 0 5px var(--tank-glow); }
+.enemy-drone.enemy-tank .drone-eye { width:11px; height:11px; border:2px solid var(--tank-armor-light); border-radius:3px; background:radial-gradient(circle at 35% 30%,#fff,var(--tank-core) 38%,var(--tank-armor-dark) 100%); box-shadow:0 0 6px var(--tank-core),0 0 12px var(--tank-glow); }
+.enemy-drone.enemy-tank .drone-light { background:var(--tank-armor-light); box-shadow:0 0 5px var(--tank-glow),0 0 9px var(--tank-armor-light); }
+.enemy-drone.enemy-scout {
+  border-color:rgba(103,232,255,.92);
+  box-shadow:inset -5px -6px 0 rgba(0,0,0,.72),inset 3px 3px 0 rgba(255,255,255,.1),inset 0 0 0 2px rgba(48,191,255,.2),0 0 7px rgba(44,210,255,.78),0 0 17px rgba(19,146,255,.34);
+}
+.enemy-drone.enemy-scout .drone-aura { border-color:rgba(44,210,255,.55); box-shadow:0 0 10px rgba(19,146,255,.35),inset 0 0 9px rgba(44,210,255,.15); }
+.enemy-drone.enemy-scout .drone-ring { border-color:rgba(44,210,255,.92); border-left-color:rgba(184,248,255,.98); border-right-color:rgba(184,248,255,.98); box-shadow:0 0 5px rgba(19,174,255,.72); }
+.enemy-drone.enemy-scout .drone-eye { border-color:rgba(184,248,255,.98); background:radial-gradient(circle at 38% 30%,#f5ffff 0 9%,#8ef4ff 18%,#21bfff 42%,#073d91 76%); box-shadow:0 0 5px rgba(224,253,255,.95),0 0 10px rgba(32,191,255,.96),0 0 18px rgba(13,116,255,.55); }
+.enemy-drone.enemy-scout .drone-light { background:#b8f8ff; box-shadow:0 0 5px #b8f8ff,0 0 10px #21bfff; }
+@media (max-width:800px) {
+  .enemy-config-list { margin-top:15px; }
+  .enemy-config-list .enemy-config-card + .enemy-config-card { margin-top:10px; }
+}
