@@ -33,7 +33,11 @@
     reaper: { value: document.querySelector("#enemy-reaper-count-value"), decrease: document.querySelector("#enemy-reaper-count-decrease"), increase: document.querySelector("#enemy-reaper-count-increase") },
     dash: { value: document.querySelector("#enemy-dash-count-value"), decrease: document.querySelector("#enemy-dash-count-decrease"), increase: document.querySelector("#enemy-dash-count-increase") },
     zigzag: { value: document.querySelector("#enemy-zigzag-count-value"), decrease: document.querySelector("#enemy-zigzag-count-decrease"), increase: document.querySelector("#enemy-zigzag-count-increase") },
-    fade: { value: document.querySelector("#enemy-fade-count-value"), decrease: document.querySelector("#enemy-fade-count-decrease"), increase: document.querySelector("#enemy-fade-count-increase") }
+    fade: { value: document.querySelector("#enemy-fade-count-value"), decrease: document.querySelector("#enemy-fade-count-decrease"), increase: document.querySelector("#enemy-fade-count-increase") },
+    devil: { value: document.querySelector("#enemy-devil-count-value"), decrease: document.querySelector("#enemy-devil-count-decrease"), increase: document.querySelector("#enemy-devil-count-increase") },
+    soul: { value: document.querySelector("#enemy-soul-count-value"), decrease: document.querySelector("#enemy-soul-count-decrease"), increase: document.querySelector("#enemy-soul-count-increase") },
+    fox: { value: document.querySelector("#enemy-fox-count-value"), decrease: document.querySelector("#enemy-fox-count-decrease"), increase: document.querySelector("#enemy-fox-count-increase") },
+    acidfox: { value: document.querySelector("#enemy-acidfox-count-value"), decrease: document.querySelector("#enemy-acidfox-count-decrease"), increase: document.querySelector("#enemy-acidfox-count-increase") }
   };
   const gameStartButton = document.querySelector("#game-start-button");
 
@@ -72,14 +76,19 @@
     reaper: { hp: 5, points: 1600, speed: 0.9, turnChance: 0.50, behavior: "reaper" },
     dash: { hp: 2, points: 500, speed: 1, turnChance: 0.30, behavior: "dash", alertSpeed: 2.5 },
     zigzag: { hp: 1, points: 400, speed: 2.65, turnChance: 0.50, behavior: "zigzag", ignoresSoftBlocks: true },
-    fade: { hp: 4, points: 1200, speed: 1.35, turnChance: 0.35, behavior: "fade" }
+    fade: { hp: 4, points: 1200, speed: 1.35, turnChance: 0.35, behavior: "fade" },
+    devil: { hp: Infinity, points: 2500, speed: 0.7, behavior: "devil", ignoresSoftBlocks: true, angerSpeed: 3 },
+    soul: { hp: 2, points: 100, speed: 1.2, turnChance: 0.34, behavior: "soul", ignoresSoftBlocks: true },
+    fox: { hp: 4, points: 1600, speed: 1.3, turnChance: 0.60, behavior: "fox", guardsFront: true },
+    acidfox: { hp: 8, points: 6400, speed: 1.5, turnChance: 0.90, behavior: "acidfox", guardsFront: true, poisonAttack: true }
   };
-  const configuredEnemyCounts = { drone: 3, tank: 0, scout: 0, hunter: 0, feint: 0, photon: 0, reaper: 0, dash: 0, zigzag: 0, fade: 0 };
+  const configuredEnemyCounts = { drone: 3, tank: 0, scout: 0, hunter: 0, feint: 0, photon: 0, reaper: 0, dash: 0, zigzag: 0, fade: 0, devil: 0, soul: 0, fox: 0, acidfox: 0 };
   const MAX_TOTAL_ENEMIES = 20;
   const ENEMY_COUNT_LIMITS = {
     drone: { min: 0, max: 8 }, tank: { min: 0, max: 8 }, scout: { min: 0, max: 8 },
     hunter: { min: 0, max: 8 }, feint: { min: 0, max: 8 }, photon: { min: 0, max: 8 },
-    reaper: { min: 0, max: 8 }, dash: { min: 0, max: 8 }, zigzag: { min: 0, max: 8 }, fade: { min: 0, max: 8 }
+    reaper: { min: 0, max: 8 }, dash: { min: 0, max: 8 }, zigzag: { min: 0, max: 8 }, fade: { min: 0, max: 8 },
+    devil: { min: 0, max: 3 }, soul: { min: 0, max: 8 }, fox: { min: 0, max: 8 }, acidfox: { min: 0, max: 8 }
   };
   let gameStarted = false;
   const enemyUnits = [];
@@ -108,6 +117,9 @@
 
   const enemyProjectiles = [];
   const REAPER_FIRE_INTERVAL_MS = 3600;
+  const ACID_POISON_MIN_MS = 8000;
+  const ACID_POISON_MAX_MS = 10000;
+  let soulCountAtStart = 0;
   const projectile = {
     active: false,
     mode: "outbound",
@@ -188,7 +200,8 @@
         element.classList.remove(
           "enemy-tank", "enemy-scout", "enemy-hunter", "enemy-feint", "enemy-photon",
           "enemy-reaper", "enemy-dash", "enemy-zigzag", "enemy-fade",
-          "is-exploding", "tank-hp-3", "tank-hp-2", "tank-hp-1"
+          "enemy-devil", "enemy-soul", "enemy-fox", "enemy-acidfox",
+          "is-exploding", "is-angry", "is-guarding", "tank-hp-3", "tank-hp-2", "tank-hp-1"
         );
         if (typeKey !== "drone") element.classList.add("enemy-" + typeKey);
         element.hidden = false;
@@ -200,8 +213,9 @@
           element, type, typeKey, hp: type.hp, alive: true, x: 0, y: 0, row: 1, col: 1,
           directionX: unitIndex % 2 === 0 ? 1 : -1, directionY: 0,
           points: type.points, speed: type.speed,
-          nextShotAt: performance.now() + 1800 + Math.random() * 1800,
-          alerting: false
+          nextShotAt: performance.now() + (typeKey === "acidfox" ? ACID_POISON_MIN_MS + Math.random() * (ACID_POISON_MAX_MS - ACID_POISON_MIN_MS) : 1800 + Math.random() * 1800),
+          alerting: false,
+          angry: false
         };
         element.addEventListener("animationend", event => {
           if (event.animationName === "enemy-drone-explode" && !unit.alive) element.hidden = true;
@@ -257,7 +271,10 @@
       occupied.push(cell);
       unit.alive = true;
       unit.hp = unit.type.hp;
-      unit.nextShotAt = performance.now() + 1800 + Math.random() * 1800;
+      unit.speed = unit.type.speed;
+      unit.angry = false;
+      unit.element.classList.remove("is-angry", "is-guarding");
+      unit.nextShotAt = performance.now() + (unit.typeKey === "acidfox" ? ACID_POISON_MIN_MS + Math.random() * (ACID_POISON_MAX_MS - ACID_POISON_MIN_MS) : 1800 + Math.random() * 1800);
       unit.alerting = false;
       unit.element.hidden = false;
       unit.element.setAttribute("aria-hidden", "false");
@@ -280,6 +297,8 @@
   function renderEnemy(unit) {
     unit.element.style.left = `${unit.x}px`;
     unit.element.style.top = `${unit.y}px`;
+    const angle = Math.atan2(unit.directionY, unit.directionX) * 180 / Math.PI + 90;
+    unit.element.style.setProperty("--enemy-facing-angle", angle + "deg");
   }
 
   function renderEnemyAppearance(unit) {
@@ -327,7 +346,8 @@
     return nearest;
   }
 
-  function getReachableCellDistances(startRow, startCol) {
+  function getReachableCellDistances(startRow, startCol, movingUnit = null) {
+    const canEnter = movingUnit ? (row, col) => canEnemyEnterCell(movingUnit, row, col) : isWalkableCell;
     const distances = new Map();
     if (!isWalkableCell(startRow, startCol)) return distances;
 
@@ -340,7 +360,7 @@
         const row = current.row + direction.y;
         const col = current.col + direction.x;
         const key = cellKey(row, col);
-        if (!isWalkableCell(row, col) || distances.has(key)) continue;
+        if (!canEnter(row, col) || distances.has(key)) continue;
         distances.set(key, nextDistance);
         queue.push({ row, col });
       }
@@ -349,11 +369,11 @@
   }
 
   function chooseStrategicDirection(unit, cellWidth, cellHeight) {
-    if (unit.type.behavior !== "chase" && unit.type.behavior !== "flee") return null;
-
+    const behavior = unit.type.behavior;
+    if (!["chase", "flee", "devil", "soul", "fox", "acidfox"].includes(behavior)) return null;
     const playerCell = getPlayerGridCell(cellWidth, cellHeight);
     if (!playerCell) return null;
-    const distances = getReachableCellDistances(playerCell.row, playerCell.col);
+    const distances = getReachableCellDistances(playerCell.row, playerCell.col, unit);
     const currentDistance = distances.get(cellKey(unit.row, unit.col));
 
     // If walls or destructible blocks separate the unit from the player, keep patrolling.
@@ -366,7 +386,7 @@
         col: unit.col + direction.x
       }))
       .filter(candidate =>
-        isWalkableCell(candidate.row, candidate.col) &&
+        canEnemyEnterCell(unit, candidate.row, candidate.col) &&
         distances.has(cellKey(candidate.row, candidate.col))
       )
       .map(candidate => ({
@@ -375,9 +395,9 @@
       }));
 
     if (!options.length) return null;
-    const bestDistance = unit.type.behavior === "chase"
-      ? Math.min(...options.map(option => option.distance))
-      : Math.max(...options.map(option => option.distance));
+    const bestDistance = behavior === "flee"
+      ? Math.max(...options.map(option => option.distance))
+      : Math.min(...options.map(option => option.distance));
     const bestOptions = options.filter(option => option.distance === bestDistance);
     return bestOptions[Math.floor(Math.random() * bestOptions.length)].direction;
   }
@@ -399,17 +419,34 @@
     const cellHeight = arena.clientHeight / GRID_ROWS;
     const playerCell = getPlayerGridCell(cellWidth, cellHeight);
     unit.alerting = unit.type.behavior === "dash" && playerCell && isDashLineClear(unit, playerCell);
-    let remaining = ENEMY_SPEED * (unit.alerting ? unit.type.alertSpeed : unit.speed) * delta;
+    let remaining = ENEMY_SPEED * (unit.angry ? unit.type.angerSpeed : unit.alerting ? unit.type.alertSpeed : unit.speed) * delta;
     if (unit.type.behavior === "reaper" && time >= unit.nextShotAt) {
       launchEnemyBoomerang(unit);
       unit.nextShotAt = time + REAPER_FIRE_INTERVAL_MS + Math.random() * 900;
+    }
+    if (unit.type.behavior === "acidfox" && time >= unit.nextShotAt) {
+      launchEnemyPoison(unit);
+      unit.nextShotAt = time + ACID_POISON_MIN_MS + Math.random() * (ACID_POISON_MAX_MS - ACID_POISON_MIN_MS);
     }
     let guard = 0;
     while (remaining > 0 && guard < 8) {
       const centerX = (unit.col + 0.5) * cellWidth;
       const centerY = (unit.row + 0.5) * cellHeight;
       const atCellCenter = Math.abs(unit.x - centerX) < 0.01 && Math.abs(unit.y - centerY) < 0.01;
-      if (atCellCenter && unit.type.behavior === "zigzag") {
+      if (atCellCenter && playerCell && unit.typeKey === "devil" && unit.angry) {
+        const dx = playerCell.col - unit.col;
+        const dy = playerCell.row - unit.row;
+        if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) { unit.directionX = Math.sign(dx); unit.directionY = 0; }
+        else if (dy !== 0) { unit.directionX = 0; unit.directionY = Math.sign(dy); }
+      } else if (atCellCenter && unit.typeKey === "dash" && unit.alerting && playerCell) {
+        if (unit.row === playerCell.row && unit.col !== playerCell.col) { unit.directionX = Math.sign(playerCell.col - unit.col); unit.directionY = 0; }
+        else if (unit.col === playerCell.col && unit.row !== playerCell.row) { unit.directionX = 0; unit.directionY = Math.sign(playerCell.row - unit.row); }
+      } else if (atCellCenter && ["fox", "acidfox"].includes(unit.type.behavior)) {
+        if (Math.random() < unit.type.turnChance) {
+          const strategicDirection = chooseStrategicDirection(unit, cellWidth, cellHeight);
+          if (strategicDirection) { unit.directionX = strategicDirection.x; unit.directionY = strategicDirection.y; }
+        }
+      } else if (atCellCenter && unit.type.behavior === "zigzag") {
         const exits = ENEMY_DIRECTIONS.filter(d => canEnemyEnterCell(unit, unit.row + d.y, unit.col + d.x));
         if (exits.length >= 3 && Math.random() < unit.type.turnChance) {
           const options = exits.filter(d => d.x !== unit.directionX || d.y !== unit.directionY);
@@ -422,11 +459,15 @@
       let nextRow = unit.row + unit.directionY;
       let nextCol = unit.col + unit.directionX;
       if (!canEnemyEnterCell(unit, nextRow, nextCol)) {
+        if (unit.typeKey === "devil" && unit.angry) { shatterDevil(unit); break; }
         chooseEnemyDirectionAtWall(unit);
         nextRow = unit.row + unit.directionY;
         nextCol = unit.col + unit.directionX;
       }
-      if (!canEnemyEnterCell(unit, nextRow, nextCol)) break;
+      if (!canEnemyEnterCell(unit, nextRow, nextCol)) {
+        if (unit.typeKey === "devil" && unit.angry) shatterDevil(unit);
+        break;
+      }
       const targetX = (nextCol + 0.5) * cellWidth;
       const targetY = (nextRow + 0.5) * cellHeight;
       const offsetX = targetX - unit.x;
