@@ -26,6 +26,19 @@
       </div>
 
       <div id="game-arena" class="game-arena" role="application" aria-label="実験ステージ。23列11行のグリッドです。W、A、S、Dキーまたは矢印キーでプレイヤーを移動できます。斜め移動はなく、同時押しでは最後に押した方向が優先されます。" tabindex="0">
+        <div class="arena-hud" aria-live="polite">
+          <span class="life-label">LIFE</span>
+          <strong id="life-count">5</strong>
+          <span class="life-icons" id="life-icons" aria-hidden="true">● ● ● ● ●</span>
+        </div>
+        <div id="gameover-overlay" class="gameover-overlay" hidden role="status" aria-live="assertive">
+          <div class="gameover-panel">
+            <span class="gameover-eyebrow">SIGNAL LOST</span>
+            <strong>GAMEOVER</strong>
+            <span class="gameover-subtitle">PLAYER UNIT DESTROYED</span>
+            <button id="gameover-restart" class="primary-button" type="button">RESTART</button>
+          </div>
+        </div>
         <div class="arena-grid" aria-hidden="true"></div>
         <div class="arena-glow" aria-hidden="true"></div>
         <div id="stage-blocks" class="stage-blocks" aria-hidden="true"></div>
@@ -76,6 +89,7 @@
           <span class="readout-label">MOTION</span>
           <strong id="movement-status" aria-live="polite">STANDBY</strong>
         </div>
+        <button id="restart-button" class="secondary-button restart-button" type="button">↻ RESTART</button>
         <a class="secondary-button stage-back-button" href="main.html"><span aria-hidden="true">←</span> メニュー</a>
       </div>
     </section>
