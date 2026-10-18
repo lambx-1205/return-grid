@@ -8,8 +8,14 @@
   const stageBlocks = document.querySelector("#stage-blocks");
   const projectileElement = document.querySelector("#projectile");
   const movementStatus = document.querySelector("#movement-status");
+  const lifeCount = document.querySelector("#life-count");
+  const lifeIcons = document.querySelector("#life-icons");
+  const restartButton = document.querySelector("#restart-button");
+  const gameoverOverlay = document.querySelector("#gameover-overlay");
+  const gameoverRestart = document.querySelector("#gameover-restart");
 
-  if (!arena || !player || !enemyDrone || !stageBlocks || !projectileElement || !movementStatus) {
+  if (!arena || !player || !enemyDrone || !stageBlocks || !projectileElement || !movementStatus ||
+      !lifeCount || !lifeIcons || !restartButton || !gameoverOverlay || !gameoverRestart) {
     console.error("RETURN GRID: required movement-stage elements were not found.");
     return;
   }
@@ -44,6 +50,9 @@
   let facingX = 0;
   let facingY = -1;
   let previousTime = 0;
+  const INITIAL_LIVES = 5;
+  let lives = INITIAL_LIVES;
+  let gameState = "playing";
 
   const projectile = {
     active: false,
@@ -209,6 +218,88 @@
     player.style.left = `${x}px`;
     player.style.top = `${y}px`;
   }
+
+  function renderLives() {
+    lifeCount.textContent = String(lives);
+    lifeIcons.textContent = Array.from({ length: INITIAL_LIVES }, (_, index) =>
+      index < lives ? "●" : "○"
+    ).join(" ");
+  }
+
+  function placePlayerAtStart() {
+    const cellWidth = arena.clientWidth / GRID_COLUMNS;
+    const cellHeight = arena.clientHeight / GRID_ROWS;
+    x = cellWidth * 9.5;
+    y = cellHeight * (GRID_ROWS - 1.5);
+    facingX = 0;
+    facingY = -1;
+    keepInsideArena();
+    renderPlayer();
+  }
+
+  function resetProjectile() {
+    projectile.active = false;
+    projectile.mode = "outbound";
+    projectile.travelled = 0;
+    projectile.maxDistance = 0;
+    projectile.turnElapsed = 0;
+    renderProjectile();
+  }
+
+  function restartGame() {
+    clearKeys();
+    lives = INITIAL_LIVES;
+    gameState = "playing";
+    player.classList.remove("is-dying", "is-moving", "moving-left", "moving-right", "moving-up", "moving-down");
+    player.style.setProperty("--trail-x", "0px");
+    player.style.setProperty("--trail-y", "0px");
+    gameoverOverlay.hidden = true;
+    movementStatus.textContent = "STANDBY";
+    renderLives();
+    resetProjectile();
+    placePlayerAtStart();
+    placeEnemyAtStart();
+  }
+
+  function showGameOver() {
+    gameState = "gameover";
+    clearKeys();
+    gameoverOverlay.hidden = false;
+    movementStatus.textContent = "GAMEOVER";
+  }
+
+  function handlePlayerEnemyCollision() {
+    if (gameState !== "playing" || !enemyAlive) return;
+    const playerHitRadius = Math.min(playerRadius.x, playerRadius.y) * 0.62;
+    const enemyHitRadius = enemyDrone.getBoundingClientRect().width * 0.5;
+    if (Math.hypot(x - enemyX, y - enemyY) > playerHitRadius + enemyHitRadius) return;
+
+    clearKeys();
+    resetProjectile();
+    if (lives <= 0) {
+      gameState = "dying-gameover";
+      player.classList.add("is-dying");
+      return;
+    }
+
+    lives -= 1;
+    renderLives();
+    gameState = "dying";
+    player.classList.add("is-dying");
+  }
+
+  player.addEventListener("animationend", event => {
+    if (event.animationName !== "player-death") return;
+    player.classList.remove("is-dying");
+    if (gameState === "dying-gameover") {
+      showGameOver();
+      return;
+    }
+    if (gameState === "dying") {
+      placePlayerAtStart();
+      gameState = "playing";
+    }
+  });
 
   // Stage layout: 1 = hard block, 0 = walkable. The perimeter is always blocked.
   const STAGE_MAP = [
@@ -390,12 +481,14 @@
   }
 
   function checkProjectileEnemyCollision() {
-    if (!enemyAlive || !projectile.active) return;
+    if (gameState !== "playing" || !enemyAlive || !projectile.active) return;
 
     // Compare the projectile and drone as circles using their visual size.
     const enemyRadius = enemyDrone.getBoundingClientRect().width / 2;
     const contactDistance = enemyRadius + PROJECTILE_SIZE / 2;
     if (Math.hypot(projectile.x - enemyX, projectile.y - enemyY) <= contactDistance) {
+      projectile.active = false;
+      renderProjectile();
       explodeEnemy();
     }
   }
@@ -407,6 +500,10 @@
   });
 
   function onKeyDown(event) {
+    if (gameState !== "playing") {
+      if (event.code === "Space" || movementKeys.has(event.key.toLowerCase())) event.preventDefault();
+      return;
+    }
     if (event.code === "Space" || event.key === " ") {
       event.preventDefault();
       if (!event.repeat) launchProjectile();
@@ -435,6 +532,11 @@
     if (!previousTime) previousTime = time;
     const delta = Math.min((time - previousTime) / 1000, 0.05);
     previousTime = time;
+
+    if (gameState !== "playing") {
+      window.requestAnimationFrame(frame);
+      return;
+    }
 
     let dx = 0;
     let dy = 0;
@@ -487,6 +589,7 @@
     updateEnemy(delta);
     updateProjectile(delta);
     checkProjectileEnemyCollision();
+    handlePlayerEnemyCollision();
     renderPlayer();
     window.requestAnimationFrame(frame);
   }
@@ -495,15 +598,15 @@
   fitPlayerToGrid();
   fitEnemyToGrid();
 
-  // Start in a walkable cell on the bottom interior row (column 10, zero-based).
-  const cellWidth = arena.clientWidth / GRID_COLUMNS;
-  const cellHeight = arena.clientHeight / GRID_ROWS;
-  x = cellWidth * 9.5;
-  y = arena.clientHeight - cellHeight * 1.5;
-  keepInsideArena();
+  // Start in a walkable cell on the bottom interior row.
+  placePlayerAtStart();
   placeEnemyAtStart();
+  renderLives();
   renderPlayer();
   renderProjectile();
+
+  restartButton.addEventListener("click", restartGame);
+  gameoverRestart.addEventListener("click", restartGame);
 
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
