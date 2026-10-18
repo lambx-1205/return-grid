@@ -1806,8 +1806,12 @@ h1 span {
 .enemy-total-count{margin:5px 0 0;color:var(--cyan);font-size:.62rem;font-weight:850;letter-spacing:.1em;text-align:right}
 
 
-/* UI repair: all enemy cards now share a fixed footprint, and the full list scrolls as one unit. */
-.stage-setup { max-height: calc(100vh - 250px); max-height: calc(100dvh - 250px); }
+/* UI repair: keep the first cards reachable when the list is taller than its viewport. */
+.stage-setup {
+  max-height: calc(100vh - 250px);
+  max-height: calc(100dvh - 250px);
+  justify-content: flex-start;
+}
 .enemy-config-list {
   display: flex;
   flex-direction: column;
