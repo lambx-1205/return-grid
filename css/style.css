@@ -319,7 +319,6 @@ h1 span {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
   /* Rotation is a core projectile cue, so keep it visibly continuous. */
   .projectile-rotor { animation-duration: 420ms !important; animation-iteration-count: infinite !important; animation-timing-function: linear !important; }
-  .projectile[data-mode="turn"] .projectile-rotor { animation-duration: 260ms !important; }
 }
 
 
@@ -660,7 +659,7 @@ h1 span {
   scale: 1.18;
   filter: drop-shadow(0 0 11px rgba(255, 79, 216, .82));
 }
-.projectile[data-mode="turn"] .projectile-rotor { animation-duration: 260ms; }
+/* Keep boomerang spin speed constant while its path curves. */
 .projectile[data-mode="return"] { filter: drop-shadow(0 0 9px rgba(66, 245, 233, .9)); }
 
 .projectile-rotor {
