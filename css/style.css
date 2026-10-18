@@ -2011,3 +2011,42 @@ h1 span {
 .enemy-drone.enemy-acidfox { border-color:#c7ff7c; background:linear-gradient(145deg,#d8f783 0%,#5c9c2b 28%,#43205e 72%,#180b24 100%); box-shadow:inset 0 0 0 3px rgba(225,255,166,.3),0 0 12px #9cff3b,0 0 25px rgba(113,255,40,.62); }
 .enemy-drone.enemy-acidfox .drone-eye { background:radial-gradient(ellipse,#fff 0 14%,#e5ff86 25%,#85ef1f 53%,#315a10 100%); box-shadow:0 0 9px #f3ffb0,0 0 20px #85ef1f; }
 .enemy-drone.enemy-acidfox .drone-ring { border-color:#e8ffb9;border-left-color:#6c9f20;border-right-color:#6c9f20; }
+
+
+/* Deployment buttons sit above decorative sprites. */
+.enemy-config-list .enemy-config-card { position: relative; isolation: isolate; }
+.enemy-config-list .enemy-count-control,
+.enemy-config-list .quantity-stepper,
+.enemy-config-list .quantity-button { position: relative; z-index: 20; pointer-events: auto; }
+.enemy-config-list .enemy-preview-portrait,
+.enemy-config-list .enemy-preview-drone { pointer-events: none; }
+
+/* Chameleon: scaly green body, then a cyan player-like slime disguise. */
+.enemy-preview-portrait--chameleon { border-color:rgba(191,255,105,.5); background:radial-gradient(circle,rgba(130,255,70,.22),transparent 68%),linear-gradient(145deg,#1c3011,#0a0d19); }
+.enemy-drone.enemy-chameleon {
+  border-color:#c7f878; border-radius:38% 38% 27% 27%;
+  background:repeating-linear-gradient(135deg,transparent 0 5px,rgba(225,255,164,.18) 6px 8px),linear-gradient(145deg,#d1ee77 0%,#619c35 30%,#2f5b35 65%,#10291d 100%);
+  box-shadow:inset 0 0 0 2px rgba(226,255,155,.22),0 0 8px #a4ec43,0 0 17px rgba(113,255,63,.45);
+}
+.enemy-drone.enemy-chameleon .drone-ring { inset:6px 1px; border-radius:40% 15%; transform:rotate(-28deg); border-color:#edffb5; border-left-color:#51852f; border-right-color:#51852f; }
+.enemy-drone.enemy-chameleon .drone-eye { width:7px; height:12px; border-radius:45%; background:linear-gradient(90deg,#172718 0 25%,#f1ffae 35% 58%,#223b19 70%); }
+.enemy-drone.enemy-chameleon .drone-light { width:3px; height:3px; background:#ddff8a; }
+.enemy-drone.enemy-chameleon.is-disguised {
+  border:1px solid rgba(110,255,247,.95); border-radius:43% 43% 47% 47%;
+  background:linear-gradient(145deg,#c0fff5 0%,#48eedf 31%,#08bcb9 63%,#075777 100%);
+  box-shadow:inset -5px -6px 0 rgba(0,50,70,.3),inset 3px 3px 0 rgba(255,255,255,.4),0 0 11px #4dfff0,0 0 24px rgba(66,245,233,.8);
+  outline:2px dashed rgba(255,255,255,.8); outline-offset:3px;
+}
+.enemy-drone.enemy-chameleon.is-disguised .drone-aura,
+.enemy-drone.enemy-chameleon.is-disguised .drone-ring,
+.enemy-drone.enemy-chameleon.is-disguised .drone-light { display:none; }
+.enemy-drone.enemy-chameleon.is-disguised .drone-eye {
+  width:10px; height:14px; border:1px solid rgba(255,255,255,.95); border-radius:50%;
+  background:radial-gradient(circle at 35% 28%,#fff 0 16%,#263e4a 19% 67%,#071a28 72%); box-shadow:0 0 4px rgba(255,255,255,.8);
+}
+.enemy-drone.enemy-chameleon.is-disguised::before,
+.enemy-drone.enemy-chameleon.is-disguised::after {
+  content:""; position:absolute; top:23px; width:5px; height:4px; border-radius:50%; background:#ff92ae; box-shadow:0 0 5px rgba(255,100,147,.75);
+}
+.enemy-drone.enemy-chameleon.is-disguised::before { left:4px; }
+.enemy-drone.enemy-chameleon.is-disguised::after { right:4px; }
