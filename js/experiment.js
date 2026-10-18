@@ -210,6 +210,7 @@
         unitIndex += 1;
       }
     }
+    if (!prototypeClaimed) enemyDrone.hidden = true;
   }
 
   function randomWalkableCell(occupied, minimumDistance = 0) {
@@ -597,8 +598,14 @@
     renderProjectile();
   }
 
+  function clearEnemyBoomerangs() {
+    for (const shot of enemyProjectiles) shot.element.remove();
+    enemyProjectiles.length = 0;
+  }
+
   function restartGame() {
     clearKeys();
+    clearEnemyBoomerangs();
     lives = INITIAL_LIVES;
     score = 0;
     renderScore();
@@ -1210,6 +1217,7 @@
 
   function startGame() {
     if (gameStarted) return;
+    clearEnemyBoomerangs();
     gameStarted = true;
     // Clear any selection left by a drag before gameplay takes keyboard input.
     window.getSelection?.()?.removeAllRanges();
