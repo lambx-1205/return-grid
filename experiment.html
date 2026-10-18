@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#080b18">
   <title>RETURN GRID | Movement Test</title>
-  <link rel="stylesheet" href="css/style.css?v=20261018-soft-block-cooldown">
-  <script src="js/experiment.js?v=20261018-soft-block-layout" defer></script>
+  <link rel="stylesheet" href="css/style.css?v=20261019-enemy-types-invincibility">
+  <script src="js/experiment.js?v=20261019-enemy-types-invincibility" defer></script>
 </head>
 <body class="page page-experiment">
   <div class="scanlines" aria-hidden="true"></div>
@@ -32,40 +32,82 @@
               <span class="setup-index">CONFIGURATION / 01</span>
               <h2 id="setup-heading">ENEMY <span>CONFIGURATION</span></h2>
             </div>
-            <span class="setup-availability"><span class="status-dot"></span> 1 TYPE AVAILABLE</span>
+            <span class="setup-availability"><span class="status-dot"></span> 3 TYPES AVAILABLE</span>
           </div>
           <p class="setup-description">出現させる敵ユニットと配備数を指定して、実験を開始する。</p>
 
-          <div class="enemy-config-card">
-            <div class="enemy-preview-portrait">
-              <div class="enemy-drone enemy-preview-drone" role="img" aria-label="敵キャラクター、ドローン">
-                <span class="drone-aura" aria-hidden="true"></span>
-                <span class="drone-ring" aria-hidden="true"></span>
-                <span class="drone-eye" aria-hidden="true"></span>
-                <span class="drone-light drone-light-left" aria-hidden="true"></span>
-                <span class="drone-light drone-light-right" aria-hidden="true"></span>
+          <div class="enemy-config-list">
+            <div class="enemy-config-card">
+              <div class="enemy-preview-portrait">
+                <div class="enemy-drone enemy-preview-drone" role="img" aria-label="敵キャラクター、ドローン">
+                  <span class="drone-aura" aria-hidden="true"></span><span class="drone-ring" aria-hidden="true"></span><span class="drone-eye" aria-hidden="true"></span>
+                  <span class="drone-light drone-light-left" aria-hidden="true"></span><span class="drone-light drone-light-right" aria-hidden="true"></span>
+                </div>
+              </div>
+              <div class="enemy-preview-text">
+                <span class="unit-index">ENEMY TYPE / 01</span><h3>DRONE</h3><p>Autonomous patrol unit</p>
+                <div class="unit-stats" aria-label="ドローンの性能">
+                  <span>HP <strong>1</strong></span><span>SCORE <strong>100</strong></span><span>SPEED <strong>×1</strong></span><span>TURN <strong>40%</strong></span>
+                </div>
+              </div>
+              <div class="enemy-count-control">
+                <label class="count-label" for="enemy-count-value">DEPLOYMENT COUNT</label>
+                <div class="quantity-stepper">
+                  <button id="enemy-count-decrease" class="quantity-button" type="button" aria-label="ドローンの数を減らす">−</button>
+                  <output id="enemy-count-value" aria-live="polite">3</output>
+                  <button id="enemy-count-increase" class="quantity-button" type="button" aria-label="ドローンの数を増やす">+</button>
+                </div>
+                <span class="count-hint">MIN 1 <span aria-hidden="true">/</span> MAX 8 UNITS</span>
               </div>
             </div>
-            <div class="enemy-preview-text">
-              <span class="unit-index">ENEMY TYPE / 01</span>
-              <h3>DRONE</h3>
-              <p>Autonomous patrol unit</p>
-              <div class="unit-stats" aria-label="ドローンの性能">
-                <span>HP <strong>1</strong></span>
-                <span>SCORE <strong>100</strong></span>
-                <span>SPEED <strong>×1</strong></span>
+            <div class="enemy-config-card">
+              <div class="enemy-preview-portrait enemy-preview-portrait--tank">
+                <div class="enemy-drone enemy-tank enemy-preview-drone tank-hp-3" role="img" aria-label="敵キャラクター、タンク">
+                  <span class="drone-aura" aria-hidden="true"></span><span class="drone-ring" aria-hidden="true"></span><span class="drone-eye" aria-hidden="true"></span>
+                  <span class="drone-light drone-light-left" aria-hidden="true"></span><span class="drone-light drone-light-right" aria-hidden="true"></span>
+                </div>
+              </div>
+              <div class="enemy-preview-text">
+                <span class="unit-index">ENEMY TYPE / 02</span><h3>TANK</h3><p>Armored heavy patrol unit</p>
+                <div class="unit-stats" aria-label="タンクの性能">
+                  <span>HP <strong>3</strong></span><span>SCORE <strong>250</strong></span><span>SPEED <strong>×0.55</strong></span><span>TURN <strong>100%</strong></span>
+                </div>
+              </div>
+              <div class="enemy-count-control">
+                <label class="count-label" for="enemy-tank-count-value">DEPLOYMENT COUNT</label>
+                <div class="quantity-stepper">
+                  <button id="enemy-tank-count-decrease" class="quantity-button" type="button" aria-label="タンクの数を減らす">−</button>
+                  <output id="enemy-tank-count-value" aria-live="polite">1</output>
+                  <button id="enemy-tank-count-increase" class="quantity-button" type="button" aria-label="タンクの数を増やす">+</button>
+                </div>
+                <span class="count-hint">MIN 0 <span aria-hidden="true">/</span> MAX 8 UNITS</span>
               </div>
             </div>
-            <div class="enemy-count-control">
-              <label class="count-label" for="enemy-count-value">DEPLOYMENT COUNT</label>
-              <div class="quantity-stepper">
-                <button id="enemy-count-decrease" class="quantity-button" type="button" aria-label="敵の数を減らす">−</button>
-                <output id="enemy-count-value" aria-live="polite">3</output>
-                <button id="enemy-count-increase" class="quantity-button" type="button" aria-label="敵の数を増やす">+</button>
+            <div class="enemy-config-card">
+              <div class="enemy-preview-portrait enemy-preview-portrait--scout">
+                <div class="enemy-drone enemy-scout enemy-preview-drone" role="img" aria-label="敵キャラクター、スカウト">
+                  <span class="drone-aura" aria-hidden="true"></span><span class="drone-ring" aria-hidden="true"></span><span class="drone-eye" aria-hidden="true"></span>
+                  <span class="drone-light drone-light-left" aria-hidden="true"></span><span class="drone-light drone-light-right" aria-hidden="true"></span>
+                </div>
               </div>
-              <span class="count-hint">MIN 1 <span aria-hidden="true">/</span> MAX 8 UNITS</span>
+              <div class="enemy-preview-text">
+                <span class="unit-index">ENEMY TYPE / 03</span><h3>SCOUT</h3><p>High-speed reconnaissance unit</p>
+                <div class="unit-stats" aria-label="スカウトの性能">
+                  <span>HP <strong>1</strong></span><span>SCORE <strong>200</strong></span><span>SPEED <strong>×2</strong></span><span>TURN <strong>65%</strong></span>
+                </div>
+              </div>
+              <div class="enemy-count-control">
+                <label class="count-label" for="enemy-scout-count-value">DEPLOYMENT COUNT</label>
+                <div class="quantity-stepper">
+                  <button id="enemy-scout-count-decrease" class="quantity-button" type="button" aria-label="スカウトの数を減らす">−</button>
+                  <output id="enemy-scout-count-value" aria-live="polite">1</output>
+                  <button id="enemy-scout-count-increase" class="quantity-button" type="button" aria-label="スカウトの数を増やす">+</button>
+                </div>
+                <span class="count-hint">MIN 0 <span aria-hidden="true">/</span> MAX 8 UNITS</span>
+              </div>
             </div>
           </div>
+
 
           <div class="setup-panel-footer">
             <span class="setup-ready"><span class="status-dot"></span> SYSTEM READY / AWAITING INPUT</span>
