@@ -388,11 +388,16 @@ h1 span {
     inset 0 0 40px rgba(77, 141, 255, .055);
 }
 
+.arena-hud-row {
+  width: min(95.833333%, calc(191.666667dvh - 575px));
+  margin-inline: auto;
+  display: flex;
+  justify-content: flex-end;
+}
+
 .arena-hud {
-  position: absolute;
-  z-index: 8;
-  top: 12px;
-  right: 12px;
+  position: relative;
+  z-index: 1;
   min-width: 86px;
   padding: 8px 11px;
   display: grid;
@@ -425,6 +430,49 @@ h1 span {
   letter-spacing: .08em;
   white-space: nowrap;
   text-shadow: 0 0 7px rgba(255, 41, 77, .85);
+}
+.respawn-overlay {
+  position: absolute;
+  z-index: 9;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: rgba(3, 7, 20, .38);
+  backdrop-filter: blur(2px);
+}
+.respawn-overlay[hidden] { display: none !important; }
+.respawn-panel {
+  min-width: min(62%, 330px);
+  padding: clamp(16px, 3vw, 28px) clamp(24px, 5vw, 46px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(66, 245, 233, .68);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(5, 20, 38, .92), rgba(8, 9, 25, .94));
+  box-shadow: 0 0 28px rgba(66, 245, 233, .18), inset 0 0 22px rgba(66, 245, 233, .05);
+}
+.respawn-eyebrow {
+  color: var(--cyan);
+  font-size: .65rem;
+  font-weight: 850;
+  letter-spacing: .24em;
+}
+.respawn-panel strong {
+  color: #f2ffff;
+  font-size: clamp(3.3rem, 11vw, 6.5rem);
+  line-height: .98;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 12px rgba(66, 245, 233, .95), 0 0 34px rgba(66, 245, 233, .4);
+}
+.respawn-caption {
+  color: #a8becb;
+  font-size: .58rem;
+  font-weight: 750;
+  letter-spacing: .17em;
+  text-align: center;
 }
 .gameover-overlay {
   position: absolute;
@@ -487,6 +535,11 @@ h1 span {
 .primary-button:hover { transform: translateY(-1px); box-shadow: 0 0 24px rgba(255, 30, 67, .42); }
 .primary-button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 .restart-button { cursor: pointer; font: inherit; white-space: nowrap; }
+.player.is-respawning {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
 .player.is-dying {
   animation: player-death 620ms ease-out forwards;
   filter: drop-shadow(0 0 14px rgba(255, 48, 85, .95));
