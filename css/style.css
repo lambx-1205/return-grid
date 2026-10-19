@@ -2423,7 +2423,7 @@ h1 span {
 .enemy-drone.enemy-tank {
   width: 34px;
   height: 42px;
-  transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1));
+  transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1)) scale(1.4);
   transform-origin: 50% 50%;
   border-radius: 9px;
   background: linear-gradient(90deg, #161a22 0%, var(--tank-armor-dark, #263f54) 12%, var(--tank-armor-mid, #698ba3) 50%, var(--tank-armor-dark, #263f54) 88%, #161a22 100%);
@@ -2488,21 +2488,57 @@ h1 span {
   0% {
     opacity: 1;
     filter: brightness(1);
-    transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1));
+    transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1)) scale(1.4);
   }
   20% {
     opacity: 1;
     filter: brightness(2.2);
-    transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1)) scale(1.08);
+    transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1)) scale(1.4) scale(1.08);
   }
   58% {
     opacity: .72;
     filter: brightness(1.8);
-    transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1)) scale(1.4) rotate(18deg);
+    transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1)) scale(1.4) scale(1.4) rotate(18deg);
   }
   100% {
     opacity: 0;
     filter: brightness(2);
-    transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1)) scale(1.8) rotate(38deg);
+    transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1)) scale(1.4) scale(1.8) rotate(38deg);
   }
 }
+
+/* Drone sprite points its nose in the direction of travel. */
+.enemy-drone.enemy-drone-unit {
+  transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1));
+  transform-origin: 50% 50%;
+}
+/* The drone body now rotates as one sprite, so avoid rotating its eye twice. */
+.enemy-drone.enemy-drone-unit .drone-eye {
+  transform: translate(-50%, -50%);
+}
+.enemy-drone.enemy-drone-unit.is-exploding {
+  animation-name: enemy-drone-unit-explode;
+}
+@keyframes enemy-drone-unit-explode {
+  0% {
+    opacity: 1;
+    filter: brightness(1) drop-shadow(0 0 5px rgba(255, 30, 65, .8));
+    transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1));
+  }
+  18% {
+    opacity: 1;
+    filter: brightness(3) drop-shadow(0 0 20px rgba(255, 245, 247, 1));
+    transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1));
+  }
+  58% {
+    opacity: .82;
+    filter: brightness(2.4) drop-shadow(0 0 19px rgba(255, 35, 70, .95));
+    transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1)) scale(1.45) rotate(18deg);
+  }
+  100% {
+    opacity: 0;
+    filter: brightness(3.2) drop-shadow(0 0 28px rgba(255, 35, 70, 0));
+    transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1)) scale(1.9) rotate(38deg);
+  }
+}
+
