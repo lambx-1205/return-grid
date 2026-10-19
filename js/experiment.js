@@ -69,7 +69,7 @@
   const ENEMY_SPEED = 72; // Speed multiplier 1 is the current drone speed.
   const ENEMY_TYPES = {
     drone: { hp: 1, points: 100, speed: 1, bounceChance: 0.40 },
-    tank: { hp: 3, points: 250, speed: 0.55, turnChance: 1.00 },
+    tank: { hp: 3, points: 200, speed: 0.4, turnChance: 0.80 },
     scout: { hp: 1, points: 200, speed: 2, turnChance: 0.65 },
     hunter: { hp: 2, points: 500, speed: 0.85, behavior: "chase", fallbackTurnChance: 0.40 },
     feint: { hp: 2, points: 600, speed: 1.20, behavior: "flee", fallbackTurnChance: 0.40 },
