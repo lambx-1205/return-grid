@@ -2417,3 +2417,92 @@ h1 span {
 .enemy-explosion-spark {
   box-shadow: 0 0 3px rgba(255, 255, 255, .72), 0 0 6px rgba(255, 79, 117, .4);
 }
+
+
+/* Tank directional sprite pass: the chassis, turret and cannon rotate with travel direction. */
+.enemy-drone.enemy-tank {
+  width: 34px;
+  height: 42px;
+  transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1));
+  transform-origin: 50% 50%;
+  border-radius: 9px;
+  background: linear-gradient(90deg, #161a22 0%, var(--tank-armor-dark, #263f54) 12%, var(--tank-armor-mid, #698ba3) 50%, var(--tank-armor-dark, #263f54) 88%, #161a22 100%);
+  box-shadow:
+    inset 0 0 0 2px rgba(6, 10, 18, .82),
+    inset 4px 0 0 rgba(0, 0, 0, .4),
+    inset -4px 0 0 rgba(0, 0, 0, .4),
+    0 0 5px var(--tank-glow, rgba(126,190,228,.35));
+}
+.enemy-drone.enemy-tank:not(.is-exploding)::before {
+  left: 6px;
+  right: 6px;
+  top: 3px;
+  bottom: 3px;
+  border-radius: 7px;
+  background:
+    linear-gradient(90deg, rgba(0,0,0,.25), transparent 24% 76%, rgba(255,255,255,.16)),
+    linear-gradient(180deg, var(--tank-armor-light, #c8dce9) 0%, var(--tank-armor-mid, #698ba3) 48%, var(--tank-armor-dark, #263f54) 100%);
+  box-shadow: inset 0 0 0 2px rgba(15, 16, 23, .42);
+}
+/* Cannon extends from the front (top) of the tank, so its angle is now unambiguous. */
+.enemy-drone.enemy-tank:not(.is-exploding)::after {
+  left: 50%;
+  top: 0;
+  width: 5px;
+  height: 16px;
+  border: 1px solid var(--tank-armor-light, #c8dce9);
+  border-radius: 3px 3px 1px 1px;
+  background: linear-gradient(90deg, var(--tank-armor-dark, #263f54), var(--tank-armor-light, #c8dce9) 48%, var(--tank-armor-mid, #698ba3));
+  transform: translateX(-50%);
+}
+.enemy-drone.enemy-tank .drone-ring {
+  inset: 14px 8px;
+  border-radius: 5px;
+  border-width: 2px;
+  background: linear-gradient(145deg, var(--tank-armor-light, #c8dce9), var(--tank-armor-dark, #263f54));
+  box-shadow: inset 0 0 0 2px rgba(12, 14, 20, .55);
+}
+.enemy-drone.enemy-tank .drone-eye {
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  box-shadow: 0 0 3px var(--tank-glow, rgba(126,190,228,.45));
+}
+.enemy-drone.enemy-tank .drone-light {
+  top: 9px;
+  bottom: 9px;
+  height: auto;
+  width: 3px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(180deg, var(--tank-armor-light, #c8dce9) 0 3px, var(--tank-armor-dark, #263f54) 3px 5px);
+  box-shadow: none;
+}
+.enemy-drone.enemy-tank .drone-light-left { left: 1px; }
+.enemy-drone.enemy-tank .drone-light-right { right: 1px; }
+
+/* Keep the tank's current heading through its defeat animation as well. */
+.enemy-drone.enemy-tank.is-exploding {
+  animation-name: enemy-tank-explode;
+}
+@keyframes enemy-tank-explode {
+  0% {
+    opacity: 1;
+    filter: brightness(1);
+    transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1));
+  }
+  20% {
+    opacity: 1;
+    filter: brightness(2.2);
+    transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1)) scale(1.08);
+  }
+  58% {
+    opacity: .72;
+    filter: brightness(1.8);
+    transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1)) scale(1.4) rotate(18deg);
+  }
+  100% {
+    opacity: 0;
+    filter: brightness(2);
+    transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1)) scale(1.8) rotate(38deg);
+  }
+}
