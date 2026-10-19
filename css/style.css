@@ -2301,16 +2301,17 @@ h1 span {
   box-shadow: 0 0 3px rgba(255, 58, 84, .54), inset 0 0 0 1px rgba(255,255,255,.10);
 }
 
-/* Tank: low, wide armored hull, visible tracks, and a short cannon. */
+/* Tank: low, wide armored hull, visible tracks, and a short cannon.
+   Every surface reads from --tank-* variables so its color changes with HP. */
 .enemy-preview-portrait--tank {
-  border-color: rgba(255, 164, 102, .48);
-  background: radial-gradient(circle, rgba(255, 107, 54, .19), transparent 68%), linear-gradient(145deg, #21150f, #0b0b13);
+  border-color: rgba(189, 213, 231, .34);
+  background: radial-gradient(circle, rgba(126, 183, 220, .15), transparent 68%), #0b0b13;
 }
 .enemy-drone.enemy-tank {
-  border: 2px solid #d28d5e;
+  border: 2px solid var(--tank-armor-light, #c8dce9);
   border-radius: 7px;
-  background: linear-gradient(180deg, #9b6a46 0%, #65442f 25%, #39291f 68%, #19151b 100%);
-  box-shadow: inset 0 0 0 2px rgba(255, 207, 142, .12), inset 0 -7px 0 rgba(0,0,0,.42), 0 0 7px rgba(218, 110, 53, .32);
+  background: linear-gradient(180deg, var(--tank-armor-light, #c8dce9) 0%, var(--tank-armor-mid, #698ba3) 25%, var(--tank-armor-dark, #263f54) 78%, #111722 100%);
+  box-shadow: inset 0 0 0 2px rgba(10, 13, 22, .58), inset 0 -7px 0 rgba(0,0,0,.42), 0 0 5px var(--tank-glow, rgba(126,190,228,.35));
 }
 .enemy-drone.enemy-tank:not(.is-exploding)::before {
   content: "";
@@ -2320,10 +2321,10 @@ h1 span {
   top: 7px;
   bottom: 7px;
   z-index: 3;
-  border: 1px solid #e8ba85;
+  border: 1px solid var(--tank-armor-light, #c8dce9);
   border-radius: 5px;
-  background: linear-gradient(145deg, #d2a271 0%, #89603d 42%, #513b2c 100%);
-  box-shadow: inset 0 0 0 2px rgba(43, 27, 18, .55), 0 0 4px rgba(255, 194, 123, .2);
+  background: linear-gradient(145deg, var(--tank-armor-light, #c8dce9) 0%, var(--tank-armor-mid, #698ba3) 42%, var(--tank-armor-dark, #263f54) 100%);
+  box-shadow: inset 0 0 0 2px rgba(15, 16, 23, .42);
 }
 .enemy-drone.enemy-tank:not(.is-exploding)::after {
   content: "";
@@ -2333,15 +2334,14 @@ h1 span {
   top: 50%;
   width: 19px;
   height: 5px;
-  border: 1px solid #e9c18b;
+  border: 1px solid var(--tank-armor-light, #c8dce9);
   border-radius: 3px;
-  background: linear-gradient(180deg, #d0a475, #65472f);
-  box-shadow: 0 0 3px rgba(255, 191, 119, .24);
+  background: linear-gradient(180deg, var(--tank-armor-light, #c8dce9), var(--tank-armor-dark, #263f54));
   transform: translate(0, -50%);
 }
 .enemy-drone.enemy-tank .drone-aura {
   inset: -4px;
-  border-color: rgba(233, 154, 90, .30);
+  border-color: var(--tank-armor-mid, #698ba3);
   border-radius: 8px;
   box-shadow: none;
   animation: none;
@@ -2349,20 +2349,20 @@ h1 span {
 .enemy-drone.enemy-tank .drone-ring {
   inset: 12px 10px;
   z-index: 4;
-  border: 2px solid #f1c68c;
+  border: 2px solid var(--tank-armor-light, #c8dce9);
   border-radius: 5px;
-  background: rgba(49, 32, 23, .65);
+  background: color-mix(in srgb, var(--tank-armor-dark, #263f54) 78%, transparent);
   transform: none;
-  box-shadow: inset 0 0 0 2px rgba(35, 21, 17, .7);
+  box-shadow: inset 0 0 0 2px rgba(12, 14, 20, .5);
 }
 .enemy-drone.enemy-tank .drone-eye {
   z-index: 6;
   width: 7px;
   height: 7px;
-  border: 1px solid #ffe1a8;
+  border: 1px solid var(--tank-core, #d9f3ff);
   border-radius: 2px;
-  background: radial-gradient(circle, #fff2c7 0 12%, #e8a65c 42%, #6a3b20 100%);
-  box-shadow: 0 0 5px rgba(255, 183, 91, .65);
+  background: radial-gradient(circle, #fff 0 12%, var(--tank-core, #d9f3ff) 42%, var(--tank-armor-dark, #263f54) 100%);
+  box-shadow: 0 0 3px var(--tank-glow, rgba(126,190,228,.45));
 }
 .enemy-drone.enemy-tank .drone-light {
   z-index: 4;
@@ -2370,7 +2370,7 @@ h1 span {
   width: 3px;
   height: 9px;
   border-radius: 1px;
-  background: repeating-linear-gradient(180deg, #f3ba76 0 2px, #2a1e1a 2px 3px);
+  background: repeating-linear-gradient(180deg, var(--tank-armor-light, #c8dce9) 0 2px, var(--tank-armor-dark, #263f54) 2px 3px);
   box-shadow: none;
 }
 .enemy-drone.enemy-tank .drone-light-left { left: 2px; }
@@ -2398,4 +2398,22 @@ h1 span {
   0% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--spark-angle)) translateY(0) scale(1); }
   55% { opacity: .95; transform: translate(-50%, -50%) rotate(var(--spark-angle)) translateY(-20px) scale(.8); }
   100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--spark-angle)) translateY(-30px) scale(.18); }
+}
+
+
+/* Performance pass: avoid costly per-enemy compositor layers and continuous aura animations. */
+.enemy-drone {
+  will-change: auto;
+}
+.enemy-drone .drone-aura {
+  animation: none !important;
+}
+.enemy-drone:not(.is-exploding) {
+  filter: none;
+}
+.enemy-drone.enemy-drone-unit .drone-rotor {
+  box-shadow: 0 0 2px rgba(255, 58, 84, .3);
+}
+.enemy-explosion-spark {
+  box-shadow: 0 0 3px rgba(255, 255, 255, .72), 0 0 6px rgba(255, 79, 117, .4);
 }
