@@ -70,8 +70,8 @@
   const ENEMY_TYPES = {
     drone: { hp: 1, points: 100, speed: 1, bounceChance: 0.40 },
     tank: { hp: 3, points: 200, speed: 0.55, turnChance: 0.80 },
-    scout: { hp: 1, points: 200, speed: 2, turnChance: 0.65 },
-    hunter: { hp: 2, points: 500, speed: 0.85, behavior: "chase", fallbackTurnChance: 0.40 },
+    scout: { hp: 2, points: 250, speed: 2, turnChance: 0.60 },
+    hunter: { hp: 2, points: 400, speed: 0.85, behavior: "chase", turnChance: 0.50, fallbackTurnChance: 0.50, chaseRadius: 5, disengageRadius: 8 },
     feint: { hp: 2, points: 600, speed: 1.20, behavior: "flee", fallbackTurnChance: 0.40 },
     photon: { hp: 2, points: 1000, speed: 4, turnChance: 0.10 },
     reaper: { hp: 5, points: 1600, speed: 0.9, turnChance: 0.50, behavior: "reaper" },
@@ -205,9 +205,9 @@
           "enemy-tank", "enemy-scout", "enemy-hunter", "enemy-feint", "enemy-photon",
           "enemy-reaper", "enemy-dash", "enemy-zigzag", "enemy-fade",
           "enemy-devil", "enemy-soul", "enemy-fox", "enemy-acidfox", "enemy-chameleon",
-          "is-exploding", "is-angry", "is-guarding", "is-disguised", "tank-hp-3", "tank-hp-2", "tank-hp-1"
+          "is-exploding", "is-angry", "is-guarding", "is-disguised", "is-chasing", "tank-hp-3", "tank-hp-2", "tank-hp-1"
         );
-        element.classList.toggle("enemy-drone-unit", typeKey === "drone");
+        element.classList.toggle("enemy-drone-unit", typeKey === "drone" || typeKey === "scout");
         if (typeKey !== "drone") element.classList.add("enemy-" + typeKey);
         element.hidden = false;
         element.setAttribute("aria-hidden", "false");
@@ -220,6 +220,7 @@
           points: type.points, speed: type.speed,
           nextShotAt: performance.now() + (typeKey === "acidfox" ? ACID_POISON_MIN_MS + Math.random() * (ACID_POISON_MAX_MS - ACID_POISON_MIN_MS) : 1800 + Math.random() * 1800),
           alerting: false,
+          chasing: false,
           angry: false,
           nextDisguiseAt: performance.now() + 15000,
           disguisedUntil: 0,
@@ -227,7 +228,7 @@
         };
         renderEnemyAppearance(unit);
         element.addEventListener("animationend", event => {
-          if ((event.animationName === "enemy-drone-explode" || event.animationName === "enemy-tank-explode") && !unit.alive) element.hidden = true;
+          if ((event.animationName === "enemy-drone-explode" || event.animationName === "enemy-drone-unit-explode" || event.animationName === "enemy-tank-explode") && !unit.alive) element.hidden = true;
         });
         enemyUnits.push(unit);
         unitIndex += 1;
@@ -455,6 +456,12 @@
     const updateContext = context || createEnemyUpdateContext();
     const { cellWidth, cellHeight, playerCell } = updateContext;
     unit.alerting = unit.type.behavior === "dash" && playerCell && isDashLineClear(unit, playerCell);
+    if (unit.typeKey === "hunter" && playerCell) {
+      const playerDistance = Math.abs(playerCell.col - unit.col) + Math.abs(playerCell.row - unit.row);
+      if (!unit.chasing && playerDistance <= unit.type.chaseRadius) unit.chasing = true;
+      else if (unit.chasing && playerDistance > unit.type.disengageRadius) unit.chasing = false;
+      unit.element.classList.toggle("is-chasing", unit.chasing);
+    }
     let remaining = ENEMY_SPEED * (unit.angry ? unit.type.angerSpeed : unit.alerting ? unit.type.alertSpeed : unit.speed) * delta;
     if (unit.type.behavior === "reaper" && time >= unit.nextShotAt) {
       launchEnemyBoomerang(unit);
@@ -488,7 +495,10 @@
           const options = exits.filter(d => d.x !== unit.directionX || d.y !== unit.directionY);
           if (options.length) { const chosen = options[Math.floor(Math.random() * options.length)]; unit.directionX = chosen.x; unit.directionY = chosen.y; }
         }
-      } else if (atCellCenter && unit.type.behavior) {
+      } else if (atCellCenter && unit.typeKey === "hunter" && unit.chasing) {
+        const strategicDirection = chooseStrategicDirection(unit, cellWidth, cellHeight);
+        if (strategicDirection) { unit.directionX = strategicDirection.x; unit.directionY = strategicDirection.y; }
+      } else if (atCellCenter && unit.type.behavior && unit.typeKey !== "hunter") {
         const strategicDirection = chooseStrategicDirection(unit, cellWidth, cellHeight);
         if (strategicDirection) { unit.directionX = strategicDirection.x; unit.directionY = strategicDirection.y; }
       }
