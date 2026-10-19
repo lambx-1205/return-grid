@@ -69,7 +69,7 @@
   const ENEMY_SPEED = 72; // Speed multiplier 1 is the current drone speed.
   const ENEMY_TYPES = {
     drone: { hp: 1, points: 100, speed: 1, bounceChance: 0.40 },
-    tank: { hp: 3, points: 200, speed: 0.4, turnChance: 0.80 },
+    tank: { hp: 3, points: 200, speed: 0.55, turnChance: 0.80 },
     scout: { hp: 1, points: 200, speed: 2, turnChance: 0.65 },
     hunter: { hp: 2, points: 500, speed: 0.85, behavior: "chase", fallbackTurnChance: 0.40 },
     feint: { hp: 2, points: 600, speed: 1.20, behavior: "flee", fallbackTurnChance: 0.40 },
@@ -102,6 +102,8 @@
   const SOFT_BLOCK_HIT_POINTS = 2;
   const ATTACK_COOLDOWN_MS = 1500;
   let attackCooldownEndsAt = 0;
+  let lastAttackCooldownDisplay = null;
+  let lastAttackCooldownState = null;
   let projectileRangeCells = 3; // Boomerang range is measured in grid cells.
   let x = 0;
   let y = 0;
@@ -223,6 +225,7 @@
           disguisedUntil: 0,
           disguised: false
         };
+        renderEnemyAppearance(unit);
         element.addEventListener("animationend", event => {
           if (event.animationName === "enemy-drone-explode" && !unit.alive) element.hidden = true;
         });
@@ -437,12 +440,17 @@
     }
   }
 
-  function updateEnemy(unit, delta, time = performance.now()) {
-    if (!unit.alive) return;
-    updateChameleonState(unit, time);
+  function createEnemyUpdateContext() {
     const cellWidth = arena.clientWidth / GRID_COLUMNS;
     const cellHeight = arena.clientHeight / GRID_ROWS;
-    const playerCell = getPlayerGridCell(cellWidth, cellHeight);
+    return { cellWidth, cellHeight, playerCell: getPlayerGridCell(cellWidth, cellHeight) };
+  }
+
+  function updateEnemy(unit, delta, time = performance.now(), context = null) {
+    if (!unit.alive) return;
+    updateChameleonState(unit, time);
+    const updateContext = context || createEnemyUpdateContext();
+    const { cellWidth, cellHeight, playerCell } = updateContext;
     unit.alerting = unit.type.behavior === "dash" && playerCell && isDashLineClear(unit, playerCell);
     let remaining = ENEMY_SPEED * (unit.angry ? unit.type.angerSpeed : unit.alerting ? unit.type.alertSpeed : unit.speed) * delta;
     if (unit.type.behavior === "reaper" && time >= unit.nextShotAt) {
@@ -466,7 +474,7 @@
       } else if (atCellCenter && unit.typeKey === "dash" && unit.alerting && playerCell) {
         if (unit.row === playerCell.row && unit.col !== playerCell.col) { unit.directionX = Math.sign(playerCell.col - unit.col); unit.directionY = 0; }
         else if (unit.col === playerCell.col && unit.row !== playerCell.row) { unit.directionX = 0; unit.directionY = Math.sign(playerCell.row - unit.row); }
-      } else if (atCellCenter && ["fox", "acidfox"].includes(unit.type.behavior)) {
+      } else if (atCellCenter && (unit.type.behavior === "fox" || unit.type.behavior === "acidfox")) {
         if (Math.random() < unit.type.turnChance) {
           const strategicDirection = chooseStrategicDirection(unit, cellWidth, cellHeight);
           if (strategicDirection) { unit.directionX = strategicDirection.x; unit.directionY = strategicDirection.y; }
@@ -528,15 +536,20 @@
   function updateAttackCooldown(time) {
     const remainingMs = Math.max(0, attackCooldownEndsAt - time);
     const isCooling = remainingMs > 0;
+    const display = isCooling ? (remainingMs / 1000).toFixed(1) : "GO";
+    // The HUD displays tenths of a second, so updating it every frame only creates needless DOM work.
+    if (display === lastAttackCooldownDisplay && isCooling === lastAttackCooldownState) return;
+    lastAttackCooldownDisplay = display;
+    lastAttackCooldownState = isCooling;
     const remainingRatio = Math.min(1, remainingMs / ATTACK_COOLDOWN_MS);
     const angle = isCooling ? remainingRatio * 360 : 360;
     attackCooldownRing.style.setProperty("--cooldown-angle", `${angle}deg`);
     attackCooldown.classList.toggle("is-cooling", isCooling);
     attackCooldown.classList.toggle("is-ready", !isCooling);
-    attackCooldownValue.textContent = isCooling ? (remainingMs / 1000).toFixed(1) : "GO";
+    attackCooldownValue.textContent = display;
     attackCooldown.setAttribute(
       "aria-label",
-      isCooling ? `攻撃クールタイム残り ${(remainingMs / 1000).toFixed(1)} 秒` : "攻撃可能"
+      isCooling ? `攻撃クールタイム残り ${display} 秒` : "攻撃可能"
     );
   }
 
@@ -1181,7 +1194,7 @@
     ring.className = "enemy-explosion-ring";
     effect.appendChild(ring);
 
-    [0, 45, 90, 135, 180, 225, 270, 315].forEach(angle => {
+    [0, 90, 180, 270].forEach(angle => {
       const spark = document.createElement("span");
       spark.className = "enemy-explosion-spark";
       spark.style.setProperty("--spark-angle", angle + "deg");
@@ -1304,7 +1317,8 @@
       // Keep the enemy patrolling during the countdown, but disable player input
       // and all collision checks until the player has returned.
       if (gameState === "respawning") {
-        for (const unit of enemyUnits) updateEnemy(unit, delta);
+        const enemyContext = createEnemyUpdateContext();
+        for (const unit of enemyUnits) updateEnemy(unit, delta, time, enemyContext);
         updateRespawnCountdown(time);
       }
       window.requestAnimationFrame(frame);
@@ -1361,7 +1375,8 @@
       movementStatus.textContent = "STANDBY";
     }
 
-    for (const unit of enemyUnits) updateEnemy(unit, delta);
+    const enemyContext = createEnemyUpdateContext();
+    for (const unit of enemyUnits) updateEnemy(unit, delta, time, enemyContext);
     updateProjectile(delta);
     updateEnemyBoomerangs(delta, time);
     checkProjectileSoftBlockCollision(time);
