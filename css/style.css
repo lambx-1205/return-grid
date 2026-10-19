@@ -2054,3 +2054,202 @@ h1 span {
 }
 .enemy-drone.enemy-chameleon.is-disguised::before { left:4px; }
 .enemy-drone.enemy-chameleon.is-disguised::after { right:4px; }
+
+
+/* Cross-browser enemy defeat effect: separate DOM layers avoid dependence on animated pseudo-elements. */
+.enemy-drone.is-exploding::before,
+.enemy-drone.is-exploding::after {
+  display: none !important;
+  content: none !important;
+  animation: none !important;
+}
+.enemy-explosion {
+  position: absolute;
+  z-index: 12;
+  left: 0;
+  top: 0;
+  width: 42px;
+  height: 42px;
+  overflow: visible;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+.enemy-explosion-flash {
+  position: absolute;
+  inset: -7px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 8%, rgba(255, 220, 230, .98) 17%, rgba(255, 68, 105, .94) 36%, rgba(255, 30, 80, .3) 58%, transparent 75%);
+  opacity: 0;
+  animation: enemy-explosion-flash 440ms ease-out forwards;
+}
+.enemy-explosion-ring {
+  position: absolute;
+  inset: 2px;
+  border: 2px solid rgba(255, 225, 232, .98);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(255, 75, 105, .95), inset 0 0 8px rgba(255, 75, 105, .65);
+  opacity: 0;
+  animation: enemy-explosion-ring 460ms cubic-bezier(.1, .7, .2, 1) forwards;
+}
+.enemy-explosion-spark {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 1px;
+  background: #fff;
+  box-shadow: 0 0 5px #fff, 0 0 12px #ff4f75;
+  animation: enemy-explosion-spark 420ms ease-out forwards;
+}
+@keyframes enemy-explosion-flash {
+  0% { opacity: 0; transform: scale(.12); }
+  18% { opacity: 1; transform: scale(.65); }
+  48% { opacity: .9; transform: scale(1.05); }
+  100% { opacity: 0; transform: scale(1.45); }
+}
+@keyframes enemy-explosion-ring {
+  0% { opacity: 0; transform: scale(.2); }
+  18% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.8); }
+}
+@keyframes enemy-explosion-spark {
+  0% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--spark-angle)) translateY(0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--spark-angle)) translateY(-25px) scale(.18); }
+}
+
+/* Drone 01 redesign: exposed four-rotor silhouette, metallic chassis and spinning propellers. */
+.enemy-drone.enemy-drone-unit {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.enemy-drone.enemy-drone-unit:not(.is-exploding)::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: 8px 7px 7px;
+  border: 1px solid #b6e9fa;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #a9cbd9 0%, #53768c 22%, #243c58 58%, #101b31 100%);
+  box-shadow: inset 0 0 0 2px rgba(12, 30, 51, .9), inset 0 2px 0 rgba(255,255,255,.45), 0 0 8px rgba(76, 210, 255, .38);
+  animation: drone-body-hover 760ms ease-in-out infinite alternate;
+}
+.enemy-drone.enemy-drone-unit:not(.is-exploding)::after {
+  content: "";
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: 10px;
+  width: 5px;
+  height: 4px;
+  border: 1px solid #dffbff;
+  border-radius: 2px;
+  background: #51eeff;
+  box-shadow: 0 0 6px #51eeff, 0 0 11px rgba(81, 238, 255, .8);
+  transform: translateX(-50%);
+}
+.enemy-drone.enemy-drone-unit .drone-aura {
+  z-index: 0;
+  border-color: rgba(75, 220, 255, .62);
+  box-shadow: 0 0 10px rgba(48, 190, 255, .36), inset 0 0 9px rgba(48, 190, 255, .2);
+}
+.enemy-drone.enemy-drone-unit .drone-ring { display: none; }
+.enemy-drone.enemy-drone-unit .drone-eye {
+  z-index: 5;
+  left: 50%;
+  top: 52%;
+  width: 9px;
+  height: 7px;
+  border: 1px solid #e7fdff;
+  border-radius: 3px;
+  background: radial-gradient(circle, #fff 0 15%, #a9f8ff 36%, #25bfe9 72%, #0c567f 100%);
+  box-shadow: 0 0 5px #d9fbff, 0 0 10px rgba(53, 211, 255, .95);
+  transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg));
+}
+.enemy-drone.enemy-drone-unit .drone-light {
+  z-index: 5;
+  top: 19px;
+  width: 3px;
+  height: 3px;
+  background: #8df6ff;
+  box-shadow: 0 0 5px #8df6ff, 0 0 8px #31cfff;
+}
+.enemy-drone.enemy-drone-unit .drone-arm,
+.enemy-drone.enemy-drone-unit .drone-rotor {
+  display: block;
+  position: absolute;
+  pointer-events: none;
+}
+.enemy-drone.enemy-drone-unit .drone-arm {
+  z-index: 1;
+  width: 13px;
+  height: 3px;
+  border: 1px solid rgba(161, 222, 240, .92);
+  border-radius: 3px;
+  background: linear-gradient(90deg, #223850, #a6d7e8, #304a66);
+  box-shadow: 0 0 4px rgba(71, 204, 255, .35);
+}
+.enemy-drone.enemy-drone-unit .drone-arm-nw { left: 5px; top: 9px; transform: rotate(35deg); }
+.enemy-drone.enemy-drone-unit .drone-arm-ne { right: 5px; top: 9px; transform: rotate(-35deg); }
+.enemy-drone.enemy-drone-unit .drone-arm-sw { left: 5px; bottom: 9px; transform: rotate(-35deg); }
+.enemy-drone.enemy-drone-unit .drone-arm-se { right: 5px; bottom: 9px; transform: rotate(35deg); }
+.enemy-drone.enemy-drone-unit .drone-rotor {
+  z-index: 4;
+  width: 13px;
+  height: 13px;
+  border: 1px solid #a8efff;
+  border-radius: 50%;
+  background: radial-gradient(circle, #1d3852 0 45%, #071626 72%);
+  box-shadow: 0 0 5px rgba(79, 219, 255, .82), inset 0 0 0 1px rgba(255,255,255,.16);
+}
+.enemy-drone.enemy-drone-unit .drone-rotor-nw { left: 0; top: 0; }
+.enemy-drone.enemy-drone-unit .drone-rotor-ne { right: 0; top: 0; }
+.enemy-drone.enemy-drone-unit .drone-rotor-sw { left: 0; bottom: 0; }
+.enemy-drone.enemy-drone-unit .drone-rotor-se { right: 0; bottom: 0; }
+.enemy-drone.enemy-drone-unit .drone-rotor::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, #baf8ff 22%, #fff 50%, #7ce8ff 78%, transparent);
+  transform: translate(-50%, -50%);
+  animation: drone-propeller-spin 180ms linear infinite;
+}
+.enemy-drone.enemy-drone-unit .drone-rotor::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 4px #fff;
+  transform: translate(-50%, -50%);
+}
+.enemy-drone.enemy-drone-unit .drone-rotor-ne::before,
+.enemy-drone.enemy-drone-unit .drone-rotor-sw::before { animation-direction: reverse; }
+@keyframes drone-propeller-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+@keyframes drone-body-hover {
+  from { transform: translateY(0) rotate(-1deg); }
+  to { transform: translateY(-1px) rotate(1deg); }
+}
+.enemy-drone.enemy-drone-unit.is-exploding .drone-aura,
+.enemy-drone.enemy-drone-unit.is-exploding .drone-arm,
+.enemy-drone.enemy-drone-unit.is-exploding .drone-rotor,
+.enemy-drone.enemy-drone-unit.is-exploding .drone-eye,
+.enemy-drone.enemy-drone-unit.is-exploding .drone-light { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .enemy-drone.enemy-drone-unit:not(.is-exploding) .drone-rotor::before { animation-duration: 900ms; }
+  .enemy-drone.enemy-drone-unit:not(.is-exploding)::before { animation-duration: 1200ms; }
+}
