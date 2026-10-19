@@ -1697,7 +1697,6 @@ h1 span {
 .enemy-config-list #enemy-tank-count-value,
 .enemy-config-list #enemy-scout-count-value,
 .enemy-config-list #enemy-hunter-count-value,
-.enemy-config-list #enemy-feint-count-value,
 .enemy-config-list #enemy-photon-count-value { min-width: 27px; font-size: 1.45rem; }
 .enemy-config-list .count-hint { margin-top: 5px; font-size: .49rem; }
 .stage-setup .setup-panel-footer { margin-top: 14px; padding-top: 12px; }
@@ -1925,7 +1924,7 @@ h1 span {
 }
 
 /* Distinguishable silhouettes, not just fourteen different paint jobs. */
-/* Scout is a pointed interceptor; Hunter is a diamond; Feint is a faceted hex. */
+/* Scout is a pointed interceptor; Hunter is a surveillance camera; Battery is a fixed turret. */
 .enemy-drone.enemy-scout { border-radius: 35% 35% 50% 50%; clip-path: polygon(50% 0,88% 26%,100% 72%,50% 100%,0 72%,12% 26%); }
 .enemy-drone.enemy-hunter { border-radius: 11px; }
 
