@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#080b18">
   <title>RETURN GRID | Movement Test</title>
-  <link rel="stylesheet" href="css/style.css?v=20261019-scroll-fix-v8">
-  <script src="js/experiment.js?v=20261019-scroll-fix-v8" defer></script>
+  <link rel="stylesheet" href="css/style.css?v=20261019-drone-explosion-fix-v9">
+  <script src="js/experiment.js?v=20261019-drone-explosion-fix-v9" defer></script>
 </head>
 <body class="page page-experiment">
   <div class="scanlines" aria-hidden="true"></div>
@@ -40,7 +40,15 @@
           <div class="enemy-config-list">
             <div class="enemy-config-card">
               <div class="enemy-preview-portrait">
-                <div class="enemy-drone enemy-preview-drone" role="img" aria-label="敵キャラクター、ドローン">
+                <div class="enemy-drone enemy-drone-unit enemy-preview-drone" role="img" aria-label="敵キャラクター、ドローン">
+                  <span class="drone-arm drone-arm-nw" aria-hidden="true"></span>
+                  <span class="drone-arm drone-arm-ne" aria-hidden="true"></span>
+                  <span class="drone-arm drone-arm-sw" aria-hidden="true"></span>
+                  <span class="drone-arm drone-arm-se" aria-hidden="true"></span>
+                  <span class="drone-rotor drone-rotor-nw" aria-hidden="true"></span>
+                  <span class="drone-rotor drone-rotor-ne" aria-hidden="true"></span>
+                  <span class="drone-rotor drone-rotor-sw" aria-hidden="true"></span>
+                  <span class="drone-rotor drone-rotor-se" aria-hidden="true"></span>
                   <span class="drone-aura" aria-hidden="true"></span><span class="drone-ring" aria-hidden="true"></span><span class="drone-eye" aria-hidden="true"></span>
                   <span class="drone-light drone-light-left" aria-hidden="true"></span><span class="drone-light drone-light-right" aria-hidden="true"></span>
                 </div>
@@ -48,7 +56,7 @@
               <div class="enemy-preview-text">
                 <span class="unit-index">ENEMY TYPE / 01</span><h3>DRONE</h3><p>Autonomous patrol unit</p>
                 <div class="unit-stats" aria-label="ドローンの性能">
-                  <span>HP <strong>1</strong></span><span>SCORE <strong>100</strong></span><span>SPEED <strong>×1</strong></span><span>TURN <strong>40%</strong></span>
+                  <span>HP <strong>1</strong></span><span>SCORE <strong>100</strong></span><span>SPEED <strong>×1</strong></span><span>BOUNCE <strong>40%</strong></span>
                 </div>
               </div>
               <div class="enemy-count-control">
@@ -450,7 +458,15 @@
           </span>
         </div>
 
-        <div id="enemy-drone" class="enemy-drone" role="img" aria-label="敵キャラクター。赤く発光する円形ドローン" aria-hidden="false">
+        <div id="enemy-drone" class="enemy-drone" role="img" aria-label="敵キャラクター。ドローン" aria-hidden="false">
+          <span class="drone-arm drone-arm-nw" aria-hidden="true"></span>
+          <span class="drone-arm drone-arm-ne" aria-hidden="true"></span>
+          <span class="drone-arm drone-arm-sw" aria-hidden="true"></span>
+          <span class="drone-arm drone-arm-se" aria-hidden="true"></span>
+          <span class="drone-rotor drone-rotor-nw" aria-hidden="true"></span>
+          <span class="drone-rotor drone-rotor-ne" aria-hidden="true"></span>
+          <span class="drone-rotor drone-rotor-sw" aria-hidden="true"></span>
+          <span class="drone-rotor drone-rotor-se" aria-hidden="true"></span>
           <span class="drone-aura" aria-hidden="true"></span>
           <span class="drone-ring" aria-hidden="true"></span>
           <span class="drone-eye" aria-hidden="true"></span>
