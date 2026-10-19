@@ -28,7 +28,6 @@
     tank: { value: document.querySelector("#enemy-tank-count-value"), decrease: document.querySelector("#enemy-tank-count-decrease"), increase: document.querySelector("#enemy-tank-count-increase") },
     scout: { value: document.querySelector("#enemy-scout-count-value"), decrease: document.querySelector("#enemy-scout-count-decrease"), increase: document.querySelector("#enemy-scout-count-increase") },
     hunter: { value: document.querySelector("#enemy-hunter-count-value"), decrease: document.querySelector("#enemy-hunter-count-decrease"), increase: document.querySelector("#enemy-hunter-count-increase") },
-    feint: { value: document.querySelector("#enemy-feint-count-value"), decrease: document.querySelector("#enemy-feint-count-decrease"), increase: document.querySelector("#enemy-feint-count-increase") },
     photon: { value: document.querySelector("#enemy-photon-count-value"), decrease: document.querySelector("#enemy-photon-count-decrease"), increase: document.querySelector("#enemy-photon-count-increase") },
     reaper: { value: document.querySelector("#enemy-reaper-count-value"), decrease: document.querySelector("#enemy-reaper-count-decrease"), increase: document.querySelector("#enemy-reaper-count-increase") },
     dash: { value: document.querySelector("#enemy-dash-count-value"), decrease: document.querySelector("#enemy-dash-count-decrease"), increase: document.querySelector("#enemy-dash-count-increase") },
@@ -72,7 +71,7 @@
     tank: { hp: 3, points: 200, speed: 0.55, turnChance: 0.80 },
     scout: { hp: 2, points: 250, speed: 2, turnChance: 0.60 },
     hunter: { hp: 2, points: 400, speed: 0.85, behavior: "chase", turnChance: 0.50, fallbackTurnChance: 0.50, chaseRadius: 5, disengageRadius: 8 },
-    feint: { hp: 2, points: 600, speed: 1.20, behavior: "flee", fallbackTurnChance: 0.40 },
+    battery: { hp: 5, points: 400, speed: 0, behavior: "battery" },
     photon: { hp: 2, points: 1000, speed: 4, turnChance: 0.10 },
     reaper: { hp: 5, points: 1600, speed: 0.9, turnChance: 0.50, behavior: "reaper" },
     dash: { hp: 2, points: 500, speed: 1, turnChance: 0.30, behavior: "dash", alertSpeed: 2.5 },
@@ -84,11 +83,11 @@
     acidfox: { hp: 5, points: 6400, speed: 1.5, turnChance: 0.90, behavior: "acidfox", guardsFront: true, poisonAttack: true },
     chameleon: { hp: 2, points: 800, speed: 1, turnChance: 0.30, behavior: "chameleon" }
   };
-  const configuredEnemyCounts = { drone: 3, tank: 0, scout: 0, hunter: 0, feint: 0, photon: 0, reaper: 0, dash: 0, zigzag: 0, fade: 0, devil: 0, soul: 0, fox: 0, acidfox: 0, chameleon: 0 };
+  const configuredEnemyCounts = { drone: 3, tank: 0, scout: 0, hunter: 0, battery: 0, photon: 0, reaper: 0, dash: 0, zigzag: 0, fade: 0, devil: 0, soul: 0, fox: 0, acidfox: 0, chameleon: 0 };
   const MAX_TOTAL_ENEMIES = 20;
   const ENEMY_COUNT_LIMITS = {
     drone: { min: 0, max: 8 }, tank: { min: 0, max: 8 }, scout: { min: 0, max: 8 },
-    hunter: { min: 0, max: 8 }, feint: { min: 0, max: 8 }, photon: { min: 0, max: 8 },
+    hunter: { min: 0, max: 8 }, battery: { min: 0, max: 8 }, photon: { min: 0, max: 8 },
     reaper: { min: 0, max: 8 }, dash: { min: 0, max: 8 }, zigzag: { min: 0, max: 8 }, fade: { min: 0, max: 8 },
     devil: { min: 0, max: 3 }, soul: { min: 0, max: 8 }, fox: { min: 0, max: 8 }, acidfox: { min: 0, max: 8 }, chameleon: { min: 0, max: 8 }
   };
@@ -123,6 +122,9 @@
   const REAPER_FIRE_INTERVAL_MS = 3600;
   const ACID_POISON_MIN_MS = 8000;
   const ACID_POISON_MAX_MS = 10000;
+  const BATTERY_FIRE_INTERVAL_MS = 10000;
+  const BATTERY_PROJECTILE_SPEED = ENEMY_SPEED * 2.8;
+  const REAPER_DIRECT_AIM_DISTANCE_CELLS = 5;
   let soulCountAtStart = 0;
   const projectile = {
     active: false,
@@ -202,7 +204,7 @@
           arena.appendChild(element);
         }
         element.classList.remove(
-          "enemy-tank", "enemy-scout", "enemy-hunter", "enemy-feint", "enemy-photon",
+          "enemy-tank", "enemy-scout", "enemy-hunter", "enemy-battery", "enemy-photon",
           "enemy-reaper", "enemy-dash", "enemy-zigzag", "enemy-fade",
           "enemy-devil", "enemy-soul", "enemy-fox", "enemy-acidfox", "enemy-chameleon",
           "is-exploding", "is-angry", "is-guarding", "is-disguised", "is-chasing", "tank-hp-3", "tank-hp-2", "tank-hp-1"
@@ -218,7 +220,7 @@
           element, type, typeKey, hp: type.hp, alive: true, x: 0, y: 0, row: 1, col: 1,
           directionX: unitIndex % 2 === 0 ? 1 : -1, directionY: 0,
           points: type.points, speed: type.speed,
-          nextShotAt: performance.now() + (typeKey === "acidfox" ? ACID_POISON_MIN_MS + Math.random() * (ACID_POISON_MAX_MS - ACID_POISON_MIN_MS) : 1800 + Math.random() * 1800),
+          nextShotAt: performance.now() + (typeKey === "battery" ? BATTERY_FIRE_INTERVAL_MS : typeKey === "acidfox" ? ACID_POISON_MIN_MS + Math.random() * (ACID_POISON_MAX_MS - ACID_POISON_MIN_MS) : 1800 + Math.random() * 1800),
           alerting: false,
           chasing: false,
           angry: false,
@@ -271,13 +273,33 @@
     return fallback[Math.floor(Math.random() * fallback.length)] || { row: 1, col: 1 };
   }
 
+  function randomHardBlockCell(usedHardBlockKeys) {
+    const candidates = hardBlockCells.filter(cell =>
+      cell.row > 0 && cell.row < GRID_ROWS - 1 &&
+      cell.col > 0 && cell.col < GRID_COLUMNS - 1 &&
+      STAGE_MAP[cell.row][cell.col] === "1" &&
+      !usedHardBlockKeys.has(cellKey(cell.row, cell.col))
+    );
+    if (candidates.length) return candidates[Math.floor(Math.random() * candidates.length)];
+    const fallback = hardBlockCells.filter(cell =>
+      cell.row > 0 && cell.row < GRID_ROWS - 1 &&
+      cell.col > 0 && cell.col < GRID_COLUMNS - 1 &&
+      STAGE_MAP[cell.row][cell.col] === "1"
+    );
+    return fallback[Math.floor(Math.random() * fallback.length)] || { row: 1, col: 1 };
+  }
+
   function placeEnemyAtStart() {
     const cellWidth = arena.clientWidth / GRID_COLUMNS;
     const cellHeight = arena.clientHeight / GRID_ROWS;
     const playerStart = { row: 1, col: 1 };
     const occupied = [playerStart];
+    const usedHardBlockKeys = new Set();
     for (const unit of enemyUnits) {
-      const cell = randomWalkableCell(occupied, 6);
+      const cell = unit.typeKey === "battery"
+        ? randomHardBlockCell(usedHardBlockKeys)
+        : randomWalkableCell(occupied, 6);
+      if (unit.typeKey === "battery") usedHardBlockKeys.add(cellKey(cell.row, cell.col));
       occupied.push(cell);
       unit.alive = true;
       unit.hp = unit.type.hp;
@@ -286,8 +308,9 @@
       unit.disguised = false;
       unit.disguisedUntil = 0;
       unit.nextDisguiseAt = performance.now() + 15000;
-      unit.element.classList.remove("is-angry", "is-guarding", "is-disguised");
-      unit.nextShotAt = performance.now() + (unit.typeKey === "acidfox" ? ACID_POISON_MIN_MS + Math.random() * (ACID_POISON_MAX_MS - ACID_POISON_MIN_MS) : 1800 + Math.random() * 1800);
+      unit.chasing = false;
+      unit.element.classList.remove("is-angry", "is-guarding", "is-disguised", "is-chasing");
+      unit.nextShotAt = performance.now() + (unit.typeKey === "battery" ? BATTERY_FIRE_INTERVAL_MS : unit.typeKey === "acidfox" ? ACID_POISON_MIN_MS + Math.random() * (ACID_POISON_MAX_MS - ACID_POISON_MIN_MS) : 1800 + Math.random() * 1800);
       unit.alerting = false;
       unit.element.hidden = false;
       unit.element.setAttribute("aria-hidden", "false");
@@ -297,12 +320,18 @@
       unit.col = cell.col;
       unit.x = (cell.col + 0.5) * cellWidth;
       unit.y = (cell.row + 0.5) * cellHeight;
-      const directions = ENEMY_DIRECTIONS.filter(direction =>
-        canEnemyEnterCell(unit, unit.row + direction.y, unit.col + direction.x)
-      );
-      const chosen = directions[Math.floor(Math.random() * directions.length)] || { x: 1, y: 0 };
-      unit.directionX = chosen.x;
-      unit.directionY = chosen.y;
+      if (unit.typeKey === "battery") {
+        unit.directionX = 0;
+        unit.directionY = -1;
+        unit.element.style.setProperty("--battery-aim-angle", "0deg");
+      } else {
+        const directions = ENEMY_DIRECTIONS.filter(direction =>
+          canEnemyEnterCell(unit, unit.row + direction.y, unit.col + direction.x)
+        );
+        const chosen = directions[Math.floor(Math.random() * directions.length)] || { x: 1, y: 0 };
+        unit.directionX = chosen.x;
+        unit.directionY = chosen.y;
+      }
       renderEnemy(unit);
     }
   }
@@ -467,6 +496,10 @@
       launchEnemyBoomerang(unit);
       unit.nextShotAt = time + REAPER_FIRE_INTERVAL_MS + Math.random() * 900;
     }
+    if (unit.typeKey === "battery" && playerCell && time >= unit.nextShotAt) {
+      launchBatteryShot(unit);
+      unit.nextShotAt = time + BATTERY_FIRE_INTERVAL_MS;
+    }
     if (unit.type.behavior === "acidfox" && time >= unit.nextShotAt) {
       launchEnemyPoison(unit);
       unit.nextShotAt = time + ACID_POISON_MIN_MS + Math.random() * (ACID_POISON_MAX_MS - ACID_POISON_MIN_MS);
@@ -599,29 +632,63 @@
     renderEnemy(unit);
   }
 
-  function createEnemyProjectileElement(extraClass = "") {
+  function createEnemyProjectileElement(extraClass = "", initialX = 0, initialY = 0) {
     const element = projectileElement.cloneNode(true);
     element.removeAttribute("id");
     element.classList.add("enemy-projectile");
     if (extraClass) element.classList.add(extraClass);
     element.hidden = false;
+    element.style.left = initialX + "px";
+    element.style.top = initialY + "px";
     element.setAttribute("aria-hidden", "true");
     arena.appendChild(element);
     return element;
   }
 
   function launchEnemyBoomerang(unit) {
-    const element = createEnemyProjectileElement();
     const dx = x - unit.x, dy = y - unit.y;
-    const directionX = Math.abs(dx) >= Math.abs(dy) ? (Math.sign(dx) || unit.directionX) : 0;
-    const directionY = directionX === 0 ? (Math.sign(dy) || unit.directionY) : 0;
+    const playerCell = getPlayerGridCell(arena.clientWidth / GRID_COLUMNS, arena.clientHeight / GRID_ROWS);
+    const gridDistance = playerCell
+      ? Math.abs(playerCell.col - unit.col) + Math.abs(playerCell.row - unit.row)
+      : Infinity;
+    let directionX = unit.directionX;
+    let directionY = unit.directionY;
+    const directDistance = Math.hypot(dx, dy);
+    if (gridDistance <= REAPER_DIRECT_AIM_DISTANCE_CELLS && directDistance > 0.001) {
+      directionX = dx / directDistance;
+      directionY = dy / directDistance;
+    }
     const cellSize = Math.min(arena.clientWidth / GRID_COLUMNS, arena.clientHeight / GRID_ROWS);
-    enemyProjectiles.push({kind: "boomerang", element, owner: unit, x: unit.x, y: unit.y, directionX, directionY, distance: 0, maxDistance: cellSize * 3, returning: false, speed: PROJECTILE_SPEED});
+    const element = createEnemyProjectileElement("", unit.x, unit.y);
+    enemyProjectiles.push({
+      kind: "boomerang", element, owner: unit, x: unit.x, y: unit.y,
+      directionX, directionY, distance: 0,
+      maxDistance: cellSize * projectileRangeCells,
+      returning: false, speed: PROJECTILE_SPEED
+    });
   }
 
   function launchEnemyPoison(unit) {
-    const element = createEnemyProjectileElement("enemy-poison-projectile");
+    const element = createEnemyProjectileElement("enemy-poison-projectile", unit.x, unit.y);
     enemyProjectiles.push({kind: "poison", element, owner: unit, x: unit.x, y: unit.y, directionX: unit.directionX, directionY: unit.directionY, returning: false, speed: ENEMY_SPEED * 2.5});
+  }
+
+  function launchBatteryShot(unit) {
+    const dx = x - unit.x;
+    const dy = y - unit.y;
+    const distance = Math.hypot(dx, dy) || 1;
+    const directionX = dx / distance;
+    const directionY = dy / distance;
+    const aimAngle = Math.atan2(directionY, directionX) * 180 / Math.PI + 90;
+    unit.element.style.setProperty("--battery-aim-angle", aimAngle + "deg");
+    const muzzleX = unit.x + directionX * 12;
+    const muzzleY = unit.y + directionY * 12;
+    const element = createEnemyProjectileElement("enemy-battery-projectile", muzzleX, muzzleY);
+    enemyProjectiles.push({
+      kind: "battery", element, owner: unit,
+      x: muzzleX, y: muzzleY, directionX, directionY,
+      returning: false, speed: BATTERY_PROJECTILE_SPEED
+    });
   }
 
   function updateEnemyBoomerangs(delta, time) {
@@ -630,11 +697,18 @@
       const shot = enemyProjectiles[i];
       const removeShot = () => { shot.element.remove(); enemyProjectiles.splice(i, 1); };
       if (!shot.owner.alive) { removeShot(); continue; }
-      if (shot.kind === "poison") {
+      if (shot.kind === "poison" || shot.kind === "battery") {
         shot.x += shot.directionX * shot.speed * delta;
         shot.y += shot.directionY * shot.speed * delta;
         const row = Math.floor(shot.y / cellHeight), col = Math.floor(shot.x / cellWidth);
-        if (row < 0 || row >= GRID_ROWS || col < 0 || col >= GRID_COLUMNS || STAGE_MAP[row][col] === "1") { removeShot(); continue; }
+        const outsideArena = row < 0 || row >= GRID_ROWS || col < 0 || col >= GRID_COLUMNS;
+        const isSourceBlock = shot.kind === "battery" && !outsideArena &&
+          row === shot.owner.row && col === shot.owner.col;
+        const hitBlock = !outsideArena && (
+          STAGE_MAP[row][col] === "1" ||
+          (shot.kind === "battery" && softBlockCells.has(cellKey(row, col)))
+        );
+        if (!isSourceBlock && (outsideArena || hitBlock)) { removeShot(); continue; }
       } else if (!shot.returning) {
         const step = shot.speed * delta;
         shot.x += shot.directionX * step; shot.y += shot.directionY * step; shot.distance += step;
