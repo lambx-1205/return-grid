@@ -2542,3 +2542,80 @@ h1 span {
   }
 }
 
+/* Scout shares the drone's four-rotor silhouette, with a green reconnaissance palette. */
+.enemy-drone.enemy-scout.enemy-drone-unit {
+  border: 0; border-radius: 0; background: transparent; box-shadow: none;
+}
+.enemy-drone.enemy-scout.enemy-drone-unit:not(.is-exploding)::before {
+  border-color: #c4ffb2;
+  background: linear-gradient(145deg, #d9ffd0 0%, #4ca85c 23%, #1b542f 59%, #071b13 100%);
+  box-shadow: inset 0 0 0 2px rgba(6,29,15,.88), inset 0 2px 0 rgba(255,255,255,.28), 0 0 5px rgba(109,255,105,.38);
+}
+.enemy-drone.enemy-scout.enemy-drone-unit:not(.is-exploding)::after {
+  border-color: #e0ffd5; background: #7cff62;
+  box-shadow: 0 0 4px #7cff62, 0 0 9px rgba(91,255,80,.75);
+}
+.enemy-drone.enemy-scout.enemy-drone-unit .drone-aura {
+  border-color: rgba(106,255,102,.5);
+  box-shadow: 0 0 7px rgba(83,255,83,.24), inset 0 0 5px rgba(83,255,83,.12);
+}
+.enemy-drone.enemy-scout.enemy-drone-unit .drone-eye {
+  border-color: #d7ffcc;
+  background: radial-gradient(circle, #fff 0 15%, #c0ff9e 36%, #5dff4d 72%, #125323 100%);
+  box-shadow: 0 0 4px rgba(220,255,205,.9), 0 0 8px rgba(93,255,77,.7);
+}
+.enemy-drone.enemy-scout.enemy-drone-unit .drone-light { background: #baffaa; box-shadow: 0 0 4px #7cff62; }
+.enemy-drone.enemy-scout.enemy-drone-unit .drone-arm {
+  border-color: rgba(177,255,163,.82);
+  background: linear-gradient(90deg, #183b27, #85d77b, #234d2c);
+  box-shadow: none;
+}
+.enemy-drone.enemy-scout.enemy-drone-unit .drone-rotor {
+  border-color: #9aff88;
+  background: radial-gradient(circle, #275632 0 45%, #071a10 72%);
+  box-shadow: 0 0 3px rgba(91,255,80,.5), inset 0 0 0 1px rgba(255,255,255,.1);
+}
+.enemy-drone.enemy-scout.enemy-drone-unit .drone-rotor::before {
+  background: linear-gradient(90deg, transparent, #b9ff9f 20%, #65ff59 50%, #b9ff9f 80%, transparent);
+  box-shadow: 0 0 4px rgba(91,255,80,.5);
+}
+
+/* Hunter: a red CCTV-style camera that rotates toward its current heading. */
+.enemy-drone.enemy-hunter {
+  transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1));
+  transform-origin: 50% 50%; overflow: visible;
+  border: 2px solid #ff6674; border-radius: 10px 10px 13px 13px;
+  background: linear-gradient(145deg, #ffb1b5 0%, #b8293b 24%, #57131f 67%, #180811 100%);
+  box-shadow: inset 0 0 0 2px rgba(25,3,10,.85), inset 0 3px 0 rgba(255,255,255,.22), 0 0 7px rgba(255,45,69,.65), 0 0 16px rgba(255,30,54,.3);
+}
+.enemy-drone.enemy-hunter:not(.is-exploding)::before {
+  content: ""; position: absolute; z-index: 3; left: 5px; right: 5px; top: 9px; bottom: 5px;
+  border: 1px solid #ff8790; border-radius: 5px 5px 8px 8px;
+  background: linear-gradient(145deg, #ff777f 0%, #9c1c32 42%, #300b19 100%);
+  box-shadow: inset 0 0 0 2px rgba(32,4,12,.55);
+}
+.enemy-drone.enemy-hunter:not(.is-exploding)::after {
+  content: ""; position: absolute; z-index: 5; left: 50%; top: 0; width: 15px; height: 18px;
+  border: 2px solid #ffb1b5; border-radius: 5px 5px 3px 3px;
+  background: linear-gradient(90deg, #641124, #ff7b83 45%, #8e1a2c);
+  box-shadow: 0 0 5px rgba(255,56,72,.55); transform: translateX(-50%);
+}
+.enemy-drone.enemy-hunter .drone-aura {
+  inset: -5px; border-color: rgba(255,65,81,.45); border-radius: 10px; box-shadow: 0 0 7px rgba(255,35,55,.25);
+}
+.enemy-drone.enemy-hunter .drone-ring { display: none; }
+.enemy-drone.enemy-hunter .drone-eye {
+  z-index: 6; left: 50%; top: 23%; width: 9px; height: 9px;
+  border: 2px solid #ffe0d8; border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 12%, #ff8c70 35%, #ff263d 72%, #610819 100%);
+  box-shadow: 0 0 5px #ff8b8b, 0 0 11px rgba(255,35,56,.95);
+  transform: translate(-50%, -50%);
+}
+.enemy-drone.enemy-hunter .drone-light {
+  top: auto; bottom: 4px; width: 4px; height: 3px; background: #ffabb0; box-shadow: 0 0 4px #ff465b;
+}
+.enemy-drone.enemy-hunter .drone-light-left { left: 5px; }
+.enemy-drone.enemy-hunter .drone-light-right { right: 5px; }
+.enemy-drone.enemy-hunter.is-chasing .drone-eye {
+  box-shadow: 0 0 6px #fff, 0 0 14px rgba(255,20,40,1), 0 0 20px rgba(255,20,40,.75);
+}
