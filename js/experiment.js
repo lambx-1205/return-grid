@@ -124,7 +124,7 @@
   let invincibleUntil = 0;
 
   const enemyProjectiles = [];
-  const REAPER_FIRE_INTERVAL_MS = 3600;
+  const REAPER_FIRE_INTERVAL_MS = 12000;
   const REAPER_PREPARE_DURATION_MS = 1500;
   const REAPER_RECOVERY_DURATION_MS = 750;
   const ACID_POISON_MIN_MS = 8000;
@@ -535,7 +535,7 @@
           unit.element.classList.add("is-recovering");
           unit.reaperPhase = "recovery";
           unit.reaperPhaseEndsAt = time + REAPER_RECOVERY_DURATION_MS;
-          unit.nextShotAt = time + REAPER_FIRE_INTERVAL_MS + Math.random() * 900 - REAPER_PREPARE_DURATION_MS;
+          unit.nextShotAt = time + REAPER_FIRE_INTERVAL_MS - REAPER_PREPARE_DURATION_MS;
         }
       } else if (unit.reaperPhase === "recovery") {
         remaining = 0;
@@ -743,6 +743,7 @@
     const muzzleX = unit.x + directionX * 12;
     const muzzleY = unit.y + directionY * 12;
     const element = createEnemyProjectileElement("enemy-battery-projectile", muzzleX, muzzleY);
+    element.style.setProperty("--battery-projectile-angle", Math.atan2(directionY, directionX) * 180 / Math.PI + "deg");
     enemyProjectiles.push({
       kind: "battery", element, owner: unit,
       x: muzzleX, y: muzzleY, directionX, directionY,
