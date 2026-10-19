@@ -2803,3 +2803,76 @@ h1 span {
 }
 .enemy-drone.enemy-reaper .drone-light-left { left: 5px; }
 .enemy-drone.enemy-reaper .drone-light-right { right: 5px; }
+
+
+/* HUNTER: brighter red status lamps with a pronounced pulse. */
+.enemy-drone.enemy-hunter .drone-eye {
+  box-shadow: 0 0 4px #ff465d, 0 0 10px rgba(255, 25, 49, .72), 0 0 17px rgba(255, 18, 41, .52);
+  opacity: .9;
+}
+.enemy-drone.enemy-hunter.is-chasing .drone-eye {
+  box-shadow: 0 0 8px #fff, 0 0 17px #ff243f, 0 0 28px rgba(255, 10, 37, .98), 0 0 38px rgba(255, 10, 37, .62);
+  opacity: 1;
+}
+.enemy-drone.enemy-hunter .drone-light {
+  background: #ff4056;
+  box-shadow: 0 0 5px #ff5063, 0 0 11px rgba(255, 22, 48, .98), 0 0 18px rgba(255, 10, 39, .72);
+  opacity: 1;
+  animation: hunter-side-lights-pulse 680ms ease-in-out infinite alternate;
+}
+@keyframes hunter-side-lights-pulse {
+  from { filter: brightness(1); box-shadow: 0 0 4px #ff4056, 0 0 9px rgba(255, 22, 48, .85), 0 0 14px rgba(255, 10, 39, .6); }
+  to { filter: brightness(1.8); box-shadow: 0 0 7px #fff, 0 0 14px #ff243f, 0 0 23px rgba(255, 10, 39, .98); }
+}
+
+/* PHOTON: keep the four-rotor drone silhouette, recolored in violet. */
+.enemy-drone.enemy-photon.enemy-drone-unit {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.enemy-drone.enemy-photon.enemy-drone-unit:not(.is-exploding)::before {
+  border-color: #e2caff;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #dfc8ff 0%, #9364d9 22%, #502d91 58%, #1b1036 100%);
+  box-shadow: inset 0 0 0 2px rgba(25, 10, 48, .92), inset 0 2px 0 rgba(255,255,255,.48), 0 0 9px rgba(166, 98, 255, .7);
+}
+.enemy-drone.enemy-photon.enemy-drone-unit:not(.is-exploding)::after {
+  border-color: #f6eaff;
+  background: #d8b7ff;
+  box-shadow: 0 0 7px #e7cfff, 0 0 14px rgba(163, 91, 255, .98);
+}
+.enemy-drone.enemy-photon.enemy-drone-unit .drone-aura {
+  border-color: rgba(185, 128, 255, .78);
+  box-shadow: 0 0 12px rgba(151, 73, 255, .72), inset 0 0 10px rgba(199, 155, 255, .34);
+}
+.enemy-drone.enemy-photon.enemy-drone-unit .drone-ring { display: none !important; }
+.enemy-drone.enemy-photon.enemy-drone-unit .drone-eye {
+  border-color: #f7eaff;
+  border-radius: 3px;
+  background: radial-gradient(circle, #fff 0 12%, #e5c8ff 34%, #a85cff 69%, #3b126f 100%);
+  box-shadow: 0 0 6px #f0dcff, 0 0 13px rgba(177, 94, 255, .98), 0 0 21px rgba(119, 45, 255, .7);
+}
+.enemy-drone.enemy-photon.enemy-drone-unit .drone-light {
+  background: #e6caff;
+  box-shadow: 0 0 5px #dfbfff, 0 0 11px rgba(162, 90, 255, .95);
+}
+.enemy-drone.enemy-photon.enemy-drone-unit .drone-arm {
+  border-color: rgba(225, 199, 255, .96);
+  background: linear-gradient(90deg, #291747, #bc94ed, #40245f);
+  box-shadow: 0 0 5px rgba(165, 105, 255, .58);
+}
+.enemy-drone.enemy-photon.enemy-drone-unit .drone-rotor {
+  border-color: #e0c8ff;
+  background: radial-gradient(circle, #39205e 0 45%, #10071f 72%);
+  box-shadow: 0 0 7px rgba(171, 111, 255, .96), inset 0 0 0 1px rgba(255,255,255,.2);
+}
+.enemy-drone.enemy-photon.enemy-drone-unit .drone-rotor::before {
+  background: linear-gradient(90deg, transparent, #d9b5ff 22%, #fff 50%, #bb87ff 78%, transparent);
+}
+.enemy-drone.enemy-photon.enemy-drone-unit .drone-rotor::after {
+  border-color: #e7d5ff;
+  background: #a96aff;
+  box-shadow: 0 0 4px #b987ff;
+}

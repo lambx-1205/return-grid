@@ -73,8 +73,8 @@
     scout: { hp: 2, points: 250, speed: 2, turnChance: 0.60 },
     hunter: { hp: 2, points: 400, speed: 0.85, behavior: "chase", turnChance: 0.50, fallbackTurnChance: 0.50, chaseRadius: 5, disengageRadius: 8 },
     battery: { hp: 5, points: 400, speed: 0, behavior: "battery" },
-    photon: { hp: 2, points: 1000, speed: 4, turnChance: 0.10 },
-    reaper: { hp: 5, points: 1600, speed: 0.9, turnChance: 0.50, behavior: "reaper" },
+    photon: { hp: 3, points: 500, speed: 3.5, turnChance: 0.25 },
+    reaper: { hp: 5, points: 1000, speed: 0.9, turnChance: 0.50, behavior: "reaper" },
     dash: { hp: 2, points: 500, speed: 1, turnChance: 0.30, behavior: "dash", alertSpeed: 2.5 },
     zigzag: { hp: 1, points: 400, speed: 2.65, turnChance: 0.50, behavior: "zigzag", ignoresSoftBlocks: true },
     fade: { hp: 4, points: 1200, speed: 1.35, turnChance: 0.35, behavior: "fade" },
@@ -97,8 +97,12 @@
   const softBlockCells = new Map();
   let score = 0;
   const PROJECTILE_SIZE = 40;
-  const PROJECTILE_SPEED = 300;
-  const PROJECTILE_RETURN_SPEED = 340;
+  const PLAYER_BOOMERANG_SPEED_VALUE = 25 / 6; // x4.166..., equivalent to 300 CSS px/s.
+  const PLAYER_BOOMERANG_RETURN_SPEED_VALUE = 85 / 18; // x4.722..., equivalent to 340 CSS px/s.
+  const REAPER_BOOMERANG_SPEED_VALUE = PLAYER_BOOMERANG_SPEED_VALUE * 0.8;
+  const PLAYER_BOOMERANG_SPEED = ENEMY_SPEED * PLAYER_BOOMERANG_SPEED_VALUE;
+  const PLAYER_BOOMERANG_RETURN_SPEED = ENEMY_SPEED * PLAYER_BOOMERANG_RETURN_SPEED_VALUE;
+  const REAPER_BOOMERANG_SPEED = ENEMY_SPEED * REAPER_BOOMERANG_SPEED_VALUE;
   const SOFT_BLOCK_HIT_POINTS = 2;
   const ATTACK_COOLDOWN_MS = 1500;
   let attackCooldownEndsAt = 0;
@@ -124,7 +128,10 @@
   const ACID_POISON_MIN_MS = 8000;
   const ACID_POISON_MAX_MS = 10000;
   const BATTERY_FIRE_INTERVAL_MS = 10000;
-  const BATTERY_PROJECTILE_SPEED = ENEMY_SPEED * 2.8;
+  const ACID_POISON_PROJECTILE_SPEED_VALUE = 2.5;
+  const BATTERY_PROJECTILE_SPEED_VALUE = 2.5;
+  const ACID_POISON_PROJECTILE_SPEED = ENEMY_SPEED * ACID_POISON_PROJECTILE_SPEED_VALUE;
+  const BATTERY_PROJECTILE_SPEED = ENEMY_SPEED * BATTERY_PROJECTILE_SPEED_VALUE;
   const REAPER_DIRECT_AIM_DISTANCE_CELLS = 5;
   let soulCountAtStart = 0;
   const projectile = {
@@ -210,7 +217,7 @@
           "enemy-devil", "enemy-soul", "enemy-fox", "enemy-acidfox", "enemy-chameleon",
           "is-exploding", "is-angry", "is-guarding", "is-disguised", "is-chasing", "tank-hp-3", "tank-hp-2", "tank-hp-1"
         );
-        element.classList.toggle("enemy-drone-unit", typeKey === "drone" || typeKey === "scout");
+        element.classList.toggle("enemy-drone-unit", typeKey === "drone" || typeKey === "scout" || typeKey === "photon");
         if (typeKey !== "drone") element.classList.add("enemy-" + typeKey);
         element.hidden = false;
         element.setAttribute("aria-hidden", "false");
@@ -665,13 +672,13 @@
       kind: "boomerang", element, owner: unit, x: unit.x, y: unit.y,
       directionX, directionY, distance: 0,
       maxDistance: cellSize * projectileRangeCells,
-      returning: false, speed: PROJECTILE_SPEED
+      returning: false, speed: REAPER_BOOMERANG_SPEED
     });
   }
 
   function launchEnemyPoison(unit) {
     const element = createEnemyProjectileElement("enemy-poison-projectile", unit.x, unit.y);
-    enemyProjectiles.push({kind: "poison", element, owner: unit, x: unit.x, y: unit.y, directionX: unit.directionX, directionY: unit.directionY, returning: false, speed: ENEMY_SPEED * 2.5});
+    enemyProjectiles.push({kind: "poison", element, owner: unit, x: unit.x, y: unit.y, directionX: unit.directionX, directionY: unit.directionY, returning: false, speed: ACID_POISON_PROJECTILE_SPEED});
   }
 
   function launchBatteryShot(unit) {
@@ -698,18 +705,20 @@
       const shot = enemyProjectiles[i];
       const removeShot = () => { shot.element.remove(); enemyProjectiles.splice(i, 1); };
       if (!shot.owner.alive) { removeShot(); continue; }
-      if (shot.kind === "poison" || shot.kind === "battery") {
+      if (shot.kind === "battery") {
+        // Battery rounds pierce both hard and soft blocks and travel to the arena edge.
+        shot.x += shot.directionX * shot.speed * delta;
+        shot.y += shot.directionY * shot.speed * delta;
+        const outsideArena = shot.x < 0 || shot.x > arena.clientWidth ||
+          shot.y < 0 || shot.y > arena.clientHeight;
+        if (outsideArena) { removeShot(); continue; }
+      } else if (shot.kind === "poison") {
         shot.x += shot.directionX * shot.speed * delta;
         shot.y += shot.directionY * shot.speed * delta;
         const row = Math.floor(shot.y / cellHeight), col = Math.floor(shot.x / cellWidth);
         const outsideArena = row < 0 || row >= GRID_ROWS || col < 0 || col >= GRID_COLUMNS;
-        const isSourceBlock = shot.kind === "battery" && !outsideArena &&
-          row === shot.owner.row && col === shot.owner.col;
-        const hitBlock = !outsideArena && (
-          STAGE_MAP[row][col] === "1" ||
-          (shot.kind === "battery" && softBlockCells.has(cellKey(row, col)))
-        );
-        if (!isSourceBlock && (outsideArena || hitBlock)) { removeShot(); continue; }
+        const hitHardBlock = !outsideArena && STAGE_MAP[row][col] === "1";
+        if (outsideArena || hitHardBlock) { removeShot(); continue; }
       } else if (!shot.returning) {
         const step = shot.speed * delta;
         shot.x += shot.directionX * step; shot.y += shot.directionY * step; shot.distance += step;
@@ -1203,7 +1212,7 @@
 
     if (projectile.mode === "outbound") {
       const remaining = projectile.maxDistance - projectile.travelled;
-      const step = Math.min(PROJECTILE_SPEED * delta, Math.max(0, remaining));
+      const step = Math.min(PLAYER_BOOMERANG_SPEED * delta, Math.max(0, remaining));
       projectile.x += projectile.directionX * step;
       projectile.y += projectile.directionY * step;
       projectile.travelled += step;
@@ -1222,7 +1231,7 @@
       const toPlayerX = x - projectile.x;
       const toPlayerY = y - projectile.y;
       const distance = Math.hypot(toPlayerX, toPlayerY);
-      const step = PROJECTILE_RETURN_SPEED * delta;
+      const step = PLAYER_BOOMERANG_RETURN_SPEED * delta;
       if (distance <= Math.max(step, PROJECTILE_SIZE * 0.55)) {
         projectile.active = false;
       } else {
