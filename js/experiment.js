@@ -310,7 +310,10 @@
     unit.element.style.left = `${unit.x}px`;
     unit.element.style.top = `${unit.y}px`;
     const angle = Math.atan2(unit.directionY, unit.directionX) * 180 / Math.PI + 90;
-    unit.element.style.setProperty("--enemy-facing-angle", angle + "deg");
+    if (unit.lastFacingAngle !== angle) {
+      unit.lastFacingAngle = angle;
+      unit.element.style.setProperty("--enemy-facing-angle", angle + "deg");
+    }
   }
 
   function renderEnemyAppearance(unit) {
