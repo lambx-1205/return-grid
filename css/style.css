@@ -2653,3 +2653,15 @@ h1 span {
   from { filter: brightness(1); box-shadow: 0 0 6px #fff, 0 0 12px rgba(255, 20, 40, .82), 0 0 18px rgba(255, 20, 40, .65); }
   to { filter: brightness(1.55); box-shadow: 0 0 8px #fff, 0 0 17px rgba(255, 20, 40, 1), 0 0 26px rgba(255, 20, 40, .95); }
 }
+
+/* Scout visibility fix: the old pointed clip-path masked every child, including the four rotors.
+   Remove the legacy silhouette mask and circular decorations from both live and preview sprites. */
+.enemy-drone.enemy-scout.enemy-drone-unit {
+  clip-path: none;
+  overflow: visible;
+}
+.enemy-drone.enemy-scout.enemy-drone-unit .drone-aura,
+.enemy-drone.enemy-scout.enemy-drone-unit .drone-ring {
+  display: none !important;
+  animation: none !important;
+}
