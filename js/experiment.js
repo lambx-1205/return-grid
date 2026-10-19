@@ -28,6 +28,7 @@
     tank: { value: document.querySelector("#enemy-tank-count-value"), decrease: document.querySelector("#enemy-tank-count-decrease"), increase: document.querySelector("#enemy-tank-count-increase") },
     scout: { value: document.querySelector("#enemy-scout-count-value"), decrease: document.querySelector("#enemy-scout-count-decrease"), increase: document.querySelector("#enemy-scout-count-increase") },
     hunter: { value: document.querySelector("#enemy-hunter-count-value"), decrease: document.querySelector("#enemy-hunter-count-decrease"), increase: document.querySelector("#enemy-hunter-count-increase") },
+    battery: { value: document.querySelector("#enemy-battery-count-value"), decrease: document.querySelector("#enemy-battery-count-decrease"), increase: document.querySelector("#enemy-battery-count-increase") },
     photon: { value: document.querySelector("#enemy-photon-count-value"), decrease: document.querySelector("#enemy-photon-count-decrease"), increase: document.querySelector("#enemy-photon-count-increase") },
     reaper: { value: document.querySelector("#enemy-reaper-count-value"), decrease: document.querySelector("#enemy-reaper-count-decrease"), increase: document.querySelector("#enemy-reaper-count-increase") },
     dash: { value: document.querySelector("#enemy-dash-count-value"), decrease: document.querySelector("#enemy-dash-count-decrease"), increase: document.querySelector("#enemy-dash-count-increase") },
