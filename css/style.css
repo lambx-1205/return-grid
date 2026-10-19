@@ -2253,3 +2253,149 @@ h1 span {
   .enemy-drone.enemy-drone-unit:not(.is-exploding) .drone-rotor::before { animation-duration: 900ms; }
   .enemy-drone.enemy-drone-unit:not(.is-exploding)::before { animation-duration: 1200ms; }
 }
+
+
+/* Performance polish: keep the drone's flight silhouette static rather than running many infinite animations. */
+.enemy-drone.enemy-drone-unit .drone-aura,
+.enemy-drone.enemy-drone-unit:not(.is-exploding)::before,
+.enemy-drone.enemy-drone-unit .drone-rotor::before {
+  animation: none !important;
+}
+.enemy-drone.enemy-drone-unit .drone-rotor::before {
+  background: linear-gradient(90deg, transparent, #ff8f9d 20%, #ff435a 50%, #ff8f9d 80%, transparent);
+  box-shadow: 0 0 4px rgba(255, 50, 72, .65);
+}
+
+/* Drone: return to a warm red signal palette, with no continuous motion. */
+.enemy-drone.enemy-drone-unit .drone-aura {
+  border-color: rgba(255, 52, 76, .46);
+  box-shadow: 0 0 6px rgba(255, 25, 57, .20), inset 0 0 5px rgba(255, 24, 58, .10);
+}
+.enemy-drone.enemy-drone-unit:not(.is-exploding)::before {
+  border-color: #ff9aa8;
+  background: linear-gradient(145deg, #ff9da9 0%, #a92e48 23%, #48172a 59%, #170916 100%);
+  box-shadow: inset 0 0 0 2px rgba(35, 7, 20, .86), inset 0 2px 0 rgba(255,255,255,.28), 0 0 5px rgba(255, 57, 80, .30);
+}
+.enemy-drone.enemy-drone-unit:not(.is-exploding)::after {
+  border-color: #ffe0e5;
+  background: #ff455e;
+  box-shadow: 0 0 4px #ff455e;
+}
+.enemy-drone.enemy-drone-unit .drone-eye {
+  border-color: #ffd1d9;
+  background: radial-gradient(circle, #fff 0 15%, #ff9aaa 36%, #ff274c 72%, #6b0928 100%);
+  box-shadow: 0 0 4px rgba(255,210,220,.85), 0 0 8px rgba(255,35,66,.65);
+}
+.enemy-drone.enemy-drone-unit .drone-light {
+  background: #ff7388;
+  box-shadow: 0 0 4px #ff536d;
+}
+.enemy-drone.enemy-drone-unit .drone-arm {
+  border-color: rgba(255, 144, 159, .82);
+  background: linear-gradient(90deg, #3c172b, #d55b70, #4a162d);
+  box-shadow: none;
+}
+.enemy-drone.enemy-drone-unit .drone-rotor {
+  border-color: #ff94a5;
+  background: radial-gradient(circle, #53172d 0 45%, #1a0917 72%);
+  box-shadow: 0 0 3px rgba(255, 58, 84, .54), inset 0 0 0 1px rgba(255,255,255,.10);
+}
+
+/* Tank: low, wide armored hull, visible tracks, and a short cannon. */
+.enemy-preview-portrait--tank {
+  border-color: rgba(255, 164, 102, .48);
+  background: radial-gradient(circle, rgba(255, 107, 54, .19), transparent 68%), linear-gradient(145deg, #21150f, #0b0b13);
+}
+.enemy-drone.enemy-tank {
+  border: 2px solid #d28d5e;
+  border-radius: 7px;
+  background: linear-gradient(180deg, #9b6a46 0%, #65442f 25%, #39291f 68%, #19151b 100%);
+  box-shadow: inset 0 0 0 2px rgba(255, 207, 142, .12), inset 0 -7px 0 rgba(0,0,0,.42), 0 0 7px rgba(218, 110, 53, .32);
+}
+.enemy-drone.enemy-tank:not(.is-exploding)::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  top: 7px;
+  bottom: 7px;
+  z-index: 3;
+  border: 1px solid #e8ba85;
+  border-radius: 5px;
+  background: linear-gradient(145deg, #d2a271 0%, #89603d 42%, #513b2c 100%);
+  box-shadow: inset 0 0 0 2px rgba(43, 27, 18, .55), 0 0 4px rgba(255, 194, 123, .2);
+}
+.enemy-drone.enemy-tank:not(.is-exploding)::after {
+  content: "";
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: 50%;
+  width: 19px;
+  height: 5px;
+  border: 1px solid #e9c18b;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #d0a475, #65472f);
+  box-shadow: 0 0 3px rgba(255, 191, 119, .24);
+  transform: translate(0, -50%);
+}
+.enemy-drone.enemy-tank .drone-aura {
+  inset: -4px;
+  border-color: rgba(233, 154, 90, .30);
+  border-radius: 8px;
+  box-shadow: none;
+  animation: none;
+}
+.enemy-drone.enemy-tank .drone-ring {
+  inset: 12px 10px;
+  z-index: 4;
+  border: 2px solid #f1c68c;
+  border-radius: 5px;
+  background: rgba(49, 32, 23, .65);
+  transform: none;
+  box-shadow: inset 0 0 0 2px rgba(35, 21, 17, .7);
+}
+.enemy-drone.enemy-tank .drone-eye {
+  z-index: 6;
+  width: 7px;
+  height: 7px;
+  border: 1px solid #ffe1a8;
+  border-radius: 2px;
+  background: radial-gradient(circle, #fff2c7 0 12%, #e8a65c 42%, #6a3b20 100%);
+  box-shadow: 0 0 5px rgba(255, 183, 91, .65);
+}
+.enemy-drone.enemy-tank .drone-light {
+  z-index: 4;
+  top: 18px;
+  width: 3px;
+  height: 9px;
+  border-radius: 1px;
+  background: repeating-linear-gradient(180deg, #f3ba76 0 2px, #2a1e1a 2px 3px);
+  box-shadow: none;
+}
+.enemy-drone.enemy-tank .drone-light-left { left: 2px; }
+.enemy-drone.enemy-tank .drone-light-right { right: 2px; }
+
+/* Long, legible defeat burst: the ring and sparks remain visible through a deliberate fade-out. */
+.enemy-explosion { z-index: 20; }
+.enemy-explosion-flash { animation: rg-explosion-flash-long 900ms ease-out forwards; }
+.enemy-explosion-ring { animation: rg-explosion-ring-long 1000ms cubic-bezier(.1, .7, .2, 1) forwards; }
+.enemy-explosion-spark { animation: rg-explosion-spark-long 900ms ease-out forwards; }
+@keyframes rg-explosion-flash-long {
+  0% { opacity: 0; transform: scale(.12); }
+  12% { opacity: 1; transform: scale(.55); }
+  45% { opacity: .94; transform: scale(.95); }
+  72% { opacity: .74; transform: scale(1.15); }
+  100% { opacity: 0; transform: scale(1.55); }
+}
+@keyframes rg-explosion-ring-long {
+  0% { opacity: 0; transform: scale(.2); }
+  12% { opacity: 1; transform: scale(.45); }
+  55% { opacity: .9; transform: scale(1.15); }
+  100% { opacity: 0; transform: scale(2.0); }
+}
+@keyframes rg-explosion-spark-long {
+  0% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--spark-angle)) translateY(0) scale(1); }
+  55% { opacity: .95; transform: translate(-50%, -50%) rotate(var(--spark-angle)) translateY(-20px) scale(.8); }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--spark-angle)) translateY(-30px) scale(.18); }
+}
