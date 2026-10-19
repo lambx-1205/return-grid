@@ -2732,23 +2732,72 @@ h1 span {
 }
 .enemy-projectile.enemy-battery-projectile {
   z-index: 8;
-  width: 11px;
-  height: 11px;
-  border: 1px solid #ffe9b0;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff, #ffd05a 36%, #ed7027 70%, #5b1a12 100%);
-  box-shadow: 0 0 5px #ffe3a0, 0 0 12px rgba(255, 140, 46, .88);
+  width: 22px;
+  height: 10px;
+  border: 1px solid #c8fffb;
+  border-radius: 3px 65% 65% 3px;
+  background: linear-gradient(90deg, #124a70 0%, #1ee7c2 27%, #edffff 52%, #56fff1 70%, #356dff 100%);
+  box-shadow: 0 0 5px #95fff7, 0 0 12px rgba(0, 255, 218, .95), 0 0 22px rgba(40, 132, 255, .8);
+  transform: translate(-50%, -50%) rotate(var(--battery-projectile-angle, 0deg));
   filter: none;
 }
 .enemy-projectile.enemy-battery-projectile .projectile-rotor { display: none; }
+.enemy-projectile.enemy-battery-projectile::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  right: 55%;
+  width: 27px;
+  height: 5px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 218, .9));
+  filter: blur(2px);
+}
+.enemy-projectile.enemy-battery-projectile::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 4px;
+  width: 4px;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 0 0 5px #fff, 0 0 10px #7ffff5;
+}
 
-/* BATTERY: telegraph each shot with three bright flashes before firing. */
+/* BATTERY: strong green warning pulses across the chassis and barrel. */
 .enemy-drone.enemy-battery.is-charging:not(.is-exploding) {
-  animation: battery-warning-flash 600ms linear 3;
+  border-color: #baffc9;
+  animation: battery-warning-flash 600ms ease-in-out 3;
+}
+.enemy-drone.enemy-battery.is-charging:not(.is-exploding)::before {
+  border-color: #d4ffdd;
+  background: radial-gradient(circle, #ffffff 0 10%, #b6ffc8 21%, #20ff68 48%, #07371b 100%);
+  box-shadow: inset 0 0 0 2px #103a20, 0 0 7px #75ff9b, 0 0 17px rgba(40, 255, 105, .95);
+  animation: battery-warning-core 600ms ease-in-out 3;
+}
+.enemy-drone.enemy-battery.is-charging:not(.is-exploding)::after {
+  border-color: #baffc9;
+  background: linear-gradient(90deg, #0b5525, #b4ffc9 43%, #2dff70 60%, #07371b);
+  box-shadow: 0 0 6px #63ff91, 0 0 15px rgba(48, 255, 102, .95);
 }
 @keyframes battery-warning-flash {
-  0%, 49% { filter: brightness(1.85); }
-  50%, 100% { filter: brightness(.45); }
+  0%, 49% {
+    background: linear-gradient(145deg, #a3ffc0 0%, #287c43 28%, #102d1c 70%, #071b10 100%);
+    box-shadow: inset 0 0 0 2px rgba(2, 12, 5, .9), 0 0 8px #53ff89, 0 0 24px rgba(30, 255, 95, .95), 0 0 38px rgba(30, 255, 95, .55);
+    filter: brightness(1.65);
+  }
+  50%, 100% {
+    background: linear-gradient(145deg, #526b59 0%, #293d30 28%, #121f17 70%, #080f0a 100%);
+    box-shadow: inset 0 0 0 2px rgba(2, 12, 5, .9), 0 0 2px rgba(60, 255, 115, .5), 0 0 8px rgba(30, 255, 95, .38);
+    filter: brightness(.9);
+  }
+}
+@keyframes battery-warning-core {
+  0%, 49% { box-shadow: inset 0 0 0 2px #103a20, 0 0 8px #75ff9b, 0 0 20px rgba(40, 255, 105, 1); }
+  50%, 100% { box-shadow: inset 0 0 0 2px #103a20, 0 0 2px rgba(40, 255, 105, .4); }
 }
 
 /* REAPER: replace the organic shell with a compact armored robot head. */
