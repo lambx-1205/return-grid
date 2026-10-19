@@ -72,7 +72,7 @@
     tank: { hp: 3, points: 200, speed: 0.55, turnChance: 0.80 },
     scout: { hp: 2, points: 250, speed: 2, turnChance: 0.60 },
     hunter: { hp: 2, points: 400, speed: 0.85, behavior: "chase", turnChance: 0.50, fallbackTurnChance: 0.50, chaseRadius: 5, disengageRadius: 8 },
-    battery: { hp: 5, points: 400, speed: 0, behavior: "battery" },
+    battery: { hp: 2, points: 400, speed: 0, behavior: "battery" },
     photon: { hp: 3, points: 500, speed: 3.5, turnChance: 0.25 },
     reaper: { hp: 5, points: 1000, speed: 0.9, turnChance: 0.50, behavior: "reaper" },
     dash: { hp: 2, points: 500, speed: 1, turnChance: 0.30, behavior: "dash", alertSpeed: 2.5 },
@@ -125,14 +125,27 @@
 
   const enemyProjectiles = [];
   const REAPER_FIRE_INTERVAL_MS = 3600;
+  const REAPER_PREPARE_DURATION_MS = 1500;
+  const REAPER_RECOVERY_DURATION_MS = 750;
   const ACID_POISON_MIN_MS = 8000;
   const ACID_POISON_MAX_MS = 10000;
   const BATTERY_FIRE_INTERVAL_MS = 10000;
+  const BATTERY_WARNING_BLINK_INTERVAL_MS = 600;
+  const BATTERY_WARNING_BLINK_COUNT = 3;
+  const BATTERY_WARNING_DURATION_MS = BATTERY_WARNING_BLINK_INTERVAL_MS * BATTERY_WARNING_BLINK_COUNT;
   const ACID_POISON_PROJECTILE_SPEED_VALUE = 2.5;
   const BATTERY_PROJECTILE_SPEED_VALUE = PLAYER_BOOMERANG_SPEED_VALUE * 0.6; // x2.4; preserve the previous turret/player ratio.
   const ACID_POISON_PROJECTILE_SPEED = ENEMY_SPEED * ACID_POISON_PROJECTILE_SPEED_VALUE;
   const BATTERY_PROJECTILE_SPEED = ENEMY_SPEED * BATTERY_PROJECTILE_SPEED_VALUE;
   const REAPER_DIRECT_AIM_DISTANCE_CELLS = 5;
+
+  function getInitialActionAt(typeKey, now) {
+    if (typeKey === "battery") return now + BATTERY_FIRE_INTERVAL_MS - BATTERY_WARNING_DURATION_MS;
+    if (typeKey === "reaper") return now + 1800 + Math.random() * 1800 - REAPER_PREPARE_DURATION_MS;
+    if (typeKey === "acidfox") return now + ACID_POISON_MIN_MS + Math.random() * (ACID_POISON_MAX_MS - ACID_POISON_MIN_MS);
+    return now + 1800 + Math.random() * 1800;
+  }
+
   let soulCountAtStart = 0;
   const projectile = {
     active: false,
@@ -215,7 +228,7 @@
           "enemy-tank", "enemy-scout", "enemy-hunter", "enemy-battery", "enemy-photon",
           "enemy-reaper", "enemy-dash", "enemy-zigzag", "enemy-fade",
           "enemy-devil", "enemy-soul", "enemy-fox", "enemy-acidfox", "enemy-chameleon",
-          "is-exploding", "is-angry", "is-guarding", "is-disguised", "is-chasing", "tank-hp-3", "tank-hp-2", "tank-hp-1"
+          "is-exploding", "is-angry", "is-guarding", "is-disguised", "is-chasing", "is-charging", "is-recovering", "tank-hp-3", "tank-hp-2", "tank-hp-1"
         );
         element.classList.toggle("enemy-drone-unit", typeKey === "drone" || typeKey === "scout" || typeKey === "photon");
         if (typeKey !== "drone") element.classList.add("enemy-" + typeKey);
@@ -228,7 +241,11 @@
           element, type, typeKey, hp: type.hp, alive: true, x: 0, y: 0, row: 1, col: 1,
           directionX: unitIndex % 2 === 0 ? 1 : -1, directionY: 0,
           points: type.points, speed: type.speed,
-          nextShotAt: performance.now() + (typeKey === "battery" ? BATTERY_FIRE_INTERVAL_MS : typeKey === "acidfox" ? ACID_POISON_MIN_MS + Math.random() * (ACID_POISON_MAX_MS - ACID_POISON_MIN_MS) : 1800 + Math.random() * 1800),
+          nextShotAt: getInitialActionAt(typeKey, performance.now()),
+          reaperPhase: "moving",
+          reaperPhaseEndsAt: 0,
+          batteryCharging: false,
+          batteryFireAt: 0,
           alerting: false,
           chasing: false,
           angry: false,
@@ -318,7 +335,11 @@
       unit.nextDisguiseAt = performance.now() + 15000;
       unit.chasing = false;
       unit.element.classList.remove("is-angry", "is-guarding", "is-disguised", "is-chasing");
-      unit.nextShotAt = performance.now() + (unit.typeKey === "battery" ? BATTERY_FIRE_INTERVAL_MS : unit.typeKey === "acidfox" ? ACID_POISON_MIN_MS + Math.random() * (ACID_POISON_MAX_MS - ACID_POISON_MIN_MS) : 1800 + Math.random() * 1800);
+      unit.nextShotAt = getInitialActionAt(unit.typeKey, performance.now());
+      unit.reaperPhase = "moving";
+      unit.reaperPhaseEndsAt = 0;
+      unit.batteryCharging = false;
+      unit.batteryFireAt = 0;
       unit.alerting = false;
       unit.element.hidden = false;
       unit.element.setAttribute("aria-hidden", "false");
@@ -500,13 +521,43 @@
       unit.element.classList.toggle("is-chasing", unit.chasing);
     }
     let remaining = ENEMY_SPEED * (unit.angry ? unit.type.angerSpeed : unit.alerting ? unit.type.alertSpeed : unit.speed) * delta;
-    if (unit.type.behavior === "reaper" && time >= unit.nextShotAt) {
-      launchEnemyBoomerang(unit);
-      unit.nextShotAt = time + REAPER_FIRE_INTERVAL_MS + Math.random() * 900;
+    if (unit.typeKey === "reaper") {
+      if (unit.reaperPhase === "moving" && time >= unit.nextShotAt) {
+        unit.reaperPhase = "charging";
+        unit.reaperPhaseEndsAt = time + REAPER_PREPARE_DURATION_MS;
+        unit.element.classList.add("is-charging");
+      }
+      if (unit.reaperPhase === "charging") {
+        remaining = 0;
+        if (time >= unit.reaperPhaseEndsAt) {
+          launchEnemyBoomerang(unit);
+          unit.element.classList.remove("is-charging");
+          unit.element.classList.add("is-recovering");
+          unit.reaperPhase = "recovery";
+          unit.reaperPhaseEndsAt = time + REAPER_RECOVERY_DURATION_MS;
+          unit.nextShotAt = time + REAPER_FIRE_INTERVAL_MS + Math.random() * 900 - REAPER_PREPARE_DURATION_MS;
+        }
+      } else if (unit.reaperPhase === "recovery") {
+        remaining = 0;
+        if (time >= unit.reaperPhaseEndsAt) {
+          unit.reaperPhase = "moving";
+          unit.element.classList.remove("is-recovering");
+        }
+      }
     }
-    if (unit.typeKey === "battery" && playerCell && time >= unit.nextShotAt) {
-      launchBatteryShot(unit);
-      unit.nextShotAt = time + BATTERY_FIRE_INTERVAL_MS;
+    if (unit.typeKey === "battery" && playerCell) {
+      if (!unit.batteryCharging && time >= unit.nextShotAt) {
+        unit.batteryCharging = true;
+        unit.batteryFireAt = time + BATTERY_WARNING_DURATION_MS;
+        unit.element.classList.add("is-charging");
+      }
+      if (unit.batteryCharging && time >= unit.batteryFireAt) {
+        launchBatteryShot(unit);
+        unit.batteryCharging = false;
+        unit.batteryFireAt = 0;
+        unit.element.classList.remove("is-charging");
+        unit.nextShotAt = time + BATTERY_FIRE_INTERVAL_MS - BATTERY_WARNING_DURATION_MS;
+      }
     }
     if (unit.type.behavior === "acidfox" && time >= unit.nextShotAt) {
       launchEnemyPoison(unit);
