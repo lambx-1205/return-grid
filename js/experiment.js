@@ -227,7 +227,7 @@
         };
         renderEnemyAppearance(unit);
         element.addEventListener("animationend", event => {
-          if (event.animationName === "enemy-drone-explode" && !unit.alive) element.hidden = true;
+          if ((event.animationName === "enemy-drone-explode" || event.animationName === "enemy-tank-explode") && !unit.alive) element.hidden = true;
         });
         enemyUnits.push(unit);
         unitIndex += 1;
