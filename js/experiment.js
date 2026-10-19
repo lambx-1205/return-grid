@@ -334,7 +334,7 @@
       unit.disguisedUntil = 0;
       unit.nextDisguiseAt = performance.now() + 15000;
       unit.chasing = false;
-      unit.element.classList.remove("is-angry", "is-guarding", "is-disguised", "is-chasing");
+      unit.element.classList.remove("is-angry", "is-guarding", "is-disguised", "is-chasing", "is-charging", "is-recovering");
       unit.nextShotAt = getInitialActionAt(unit.typeKey, performance.now());
       unit.reaperPhase = "moving";
       unit.reaperPhaseEndsAt = 0;
