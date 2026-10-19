@@ -68,7 +68,7 @@
   const ENEMY_BASE_SIZE = 42;
   const ENEMY_SPEED = 72; // Speed multiplier 1 is the current drone speed.
   const ENEMY_TYPES = {
-    drone: { hp: 1, points: 100, speed: 1, turnChance: 0.40 },
+    drone: { hp: 1, points: 100, speed: 1, bounceChance: 0.40 },
     tank: { hp: 3, points: 250, speed: 0.55, turnChance: 1.00 },
     scout: { hp: 1, points: 200, speed: 2, turnChance: 0.65 },
     hunter: { hp: 2, points: 500, speed: 0.85, behavior: "chase", fallbackTurnChance: 0.40 },
@@ -205,10 +205,11 @@
           "enemy-devil", "enemy-soul", "enemy-fox", "enemy-acidfox", "enemy-chameleon",
           "is-exploding", "is-angry", "is-guarding", "is-disguised", "tank-hp-3", "tank-hp-2", "tank-hp-1"
         );
+        element.classList.toggle("enemy-drone-unit", typeKey === "drone");
         if (typeKey !== "drone") element.classList.add("enemy-" + typeKey);
         element.hidden = false;
         element.setAttribute("aria-hidden", "false");
-        element.setAttribute("aria-label", "敵キャラクター。" + typeKey.toUpperCase());
+        element.setAttribute("aria-label", typeKey === "drone" ? "敵キャラクター。ドローン" : "敵キャラクター。" + typeKey.toUpperCase());
         element.dataset.enemyType = typeKey;
         const type = ENEMY_TYPES[typeKey];
         const unit = {
@@ -323,7 +324,9 @@
       canEnemyEnterCell(unit, unit.row + direction.y, unit.col + direction.x)
     );
     const turnChance = unit.type.turnChance ?? unit.type.fallbackTurnChance ?? 0.40;
-    if (sideOptions.length > 0 && Math.random() < turnChance) {
+    // Drone bounceChance is the probability of reversing at a junction; other enemies use turnChance.
+    const chanceToTurn = unit.type.bounceChance == null ? turnChance : 1 - unit.type.bounceChance;
+    if (sideOptions.length > 0 && Math.random() < chanceToTurn) {
       const chosen = sideOptions[Math.floor(Math.random() * sideOptions.length)];
       unit.directionX = chosen.x;
       unit.directionY = chosen.y;
@@ -1161,12 +1164,43 @@
     }, { once: true });
   }
 
+  function createEnemyExplosionEffect(unit) {
+    // Draw the burst as independent DOM layers, rather than relying only on pseudo-elements
+    // and filtered gradients attached to the enemy being hidden.
+    const effect = document.createElement("div");
+    effect.className = "enemy-explosion";
+    effect.setAttribute("aria-hidden", "true");
+    effect.style.left = unit.x + "px";
+    effect.style.top = unit.y + "px";
+
+    const flash = document.createElement("span");
+    flash.className = "enemy-explosion-flash";
+    effect.appendChild(flash);
+
+    const ring = document.createElement("span");
+    ring.className = "enemy-explosion-ring";
+    effect.appendChild(ring);
+
+    [0, 45, 90, 135, 180, 225, 270, 315].forEach(angle => {
+      const spark = document.createElement("span");
+      spark.className = "enemy-explosion-spark";
+      spark.style.setProperty("--spark-angle", angle + "deg");
+      effect.appendChild(spark);
+    });
+
+    arena.appendChild(effect);
+    // A timeout is used instead of animationend so the effect is cleaned up even if
+    // the browser skips an animation event during backgrounding or compositing changes.
+    window.setTimeout(() => effect.remove(), 560);
+  }
+
   function defeatEnemy(unit, awardPoints = true) {
     if (!unit.alive) return;
     unit.alive = false;
     unit.element.setAttribute("aria-hidden", "true");
     unit.element.classList.remove("is-angry", "is-guarding");
     unit.element.classList.add("is-exploding");
+    createEnemyExplosionEffect(unit);
     if (awardPoints) collectEnemyPoints(unit);
   }
 
