@@ -1191,7 +1191,7 @@
     arena.appendChild(effect);
     // A timeout is used instead of animationend so the effect is cleaned up even if
     // the browser skips an animation event during backgrounding or compositing changes.
-    window.setTimeout(() => effect.remove(), 560);
+    window.setTimeout(() => effect.remove(), 1120);
   }
 
   function defeatEnemy(unit, awardPoints = true) {
