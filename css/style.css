@@ -2619,3 +2619,37 @@ h1 span {
 .enemy-drone.enemy-hunter.is-chasing .drone-eye {
   box-shadow: 0 0 6px #fff, 0 0 14px rgba(255,20,40,1), 0 0 20px rgba(255,20,40,.75);
 }
+
+/* Scout thumbnail repair: keep the complete four-rotor silhouette inside its setup card. */
+.enemy-config-list .enemy-preview-portrait--scout {
+  overflow: visible;
+}
+.enemy-config-list .enemy-preview-drone.enemy-scout.enemy-drone-unit {
+  --drone-scale: .65;
+  overflow: visible;
+}
+@media (max-width: 800px) {
+  .enemy-config-list .enemy-preview-drone.enemy-scout.enemy-drone-unit {
+    --drone-scale: .52;
+  }
+}
+
+/* Hunter's center lens is dim while patrolling, then switches on when the player is detected. */
+.enemy-drone.enemy-hunter .drone-eye {
+  border-color: #8d3442;
+  background: radial-gradient(circle, #58202a 0 16%, #7b1528 39%, #360813 74%, #19040a 100%);
+  box-shadow: 0 0 2px rgba(255, 46, 71, .22);
+  opacity: .72;
+  transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+}
+.enemy-drone.enemy-hunter.is-chasing .drone-eye {
+  border-color: #fff0f0;
+  background: radial-gradient(circle, #fff 0 16%, #ffc4bd 30%, #ff324e 58%, #97051e 100%);
+  box-shadow: 0 0 6px #fff, 0 0 14px rgba(255, 20, 40, 1), 0 0 22px rgba(255, 20, 40, .9);
+  opacity: 1;
+  animation: hunter-camera-light-pulse 760ms ease-in-out infinite alternate;
+}
+@keyframes hunter-camera-light-pulse {
+  from { filter: brightness(1); box-shadow: 0 0 6px #fff, 0 0 12px rgba(255, 20, 40, .82), 0 0 18px rgba(255, 20, 40, .65); }
+  to { filter: brightness(1.55); box-shadow: 0 0 8px #fff, 0 0 17px rgba(255, 20, 40, 1), 0 0 26px rgba(255, 20, 40, .95); }
+}
