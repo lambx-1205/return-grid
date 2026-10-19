@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#080b18">
   <title>RETURN GRID | Movement Test</title>
-  <link rel="stylesheet" href="css/style.css?v=20261019-scout-hunter-v18">
-  <script src="js/experiment.js?v=20261019-scout-hunter-v18" defer></script>
+  <link rel="stylesheet" href="css/style.css?v=20261020-battery-reaper-v19">
+  <script src="js/experiment.js?v=20261020-battery-reaper-v19" defer></script>
 </head>
 <body class="page page-experiment">
   <div class="scanlines" aria-hidden="true"></div>
@@ -143,24 +143,23 @@
               </div>
             </div>
             <div class="enemy-config-card">
-              <div class="enemy-preview-portrait enemy-preview-portrait--feint">
-                <div class="enemy-drone enemy-feint enemy-preview-drone" role="img" aria-label="敵キャラクター、フェイント">
-                  <span class="drone-aura" aria-hidden="true"></span><span class="drone-ring" aria-hidden="true"></span><span class="drone-eye" aria-hidden="true"></span>
-                  <span class="drone-light drone-light-left" aria-hidden="true"></span><span class="drone-light drone-light-right" aria-hidden="true"></span>
+              <div class="enemy-preview-portrait enemy-preview-portrait--battery">
+                <div class="enemy-drone enemy-battery enemy-preview-drone" role="img" aria-label="敵キャラクター、BATTERY">
+                  <span class="drone-eye" aria-hidden="true"></span>
                 </div>
               </div>
               <div class="enemy-preview-text">
-                <span class="unit-index">ENEMY TYPE / 05</span><h3>FEINT</h3><p>Evasive pathfinding unit</p>
-                <div class="unit-stats" aria-label="フェイントの性能">
-                  <span>HP <strong>2</strong></span><span>SCORE <strong>600</strong></span><span>SPEED <strong>×1.20</strong></span><span>TURN <strong>逃走</strong></span>
+                <span class="unit-index">ENEMY TYPE / 05</span><h3>BATTERY</h3><p>Fixed turret on a hard block</p>
+                <div class="unit-stats" aria-label="BATTERYの性能">
+                  <span>HP <strong>5</strong></span><span>SCORE <strong>400</strong></span><span>SPEED <strong>×0</strong></span><span>TURN <strong>なし</strong></span><span>FIRE <strong>10s</strong></span>
                 </div>
               </div>
               <div class="enemy-count-control">
-                <label class="count-label" for="enemy-feint-count-value">DEPLOYMENT COUNT</label>
+                <label class="count-label" for="enemy-battery-count-value">DEPLOYMENT COUNT</label>
                 <div class="quantity-stepper">
-                  <button id="enemy-feint-count-decrease" class="quantity-button" type="button" aria-label="フェイントの数を減らす">−</button>
-                  <output id="enemy-feint-count-value" aria-live="polite">1</output>
-                  <button id="enemy-feint-count-increase" class="quantity-button" type="button" aria-label="フェイントの数を増やす">+</button>
+                  <button id="enemy-battery-count-decrease" class="quantity-button" type="button" aria-label="BATTERYの数を減らす">−</button>
+                  <output id="enemy-battery-count-value" aria-live="polite">0</output>
+                  <button id="enemy-battery-count-increase" class="quantity-button" type="button" aria-label="BATTERYの数を増やす">+</button>
                 </div>
                 <span class="count-hint">MIN 0 <span aria-hidden="true">/</span> MAX 8 UNITS</span>
               </div>
@@ -173,7 +172,7 @@
                 </div>
               </div>
               <div class="enemy-preview-text">
-                <span class="unit-index">ENEMY TYPE / 06</span><h3>PHOTON</h3><p>High-velocity energy unit</p>
+                <span class="unit-index">ENEMY TYPE / 07</span><h3>PHOTON</h3><p>High-velocity energy unit</p>
                 <div class="unit-stats" aria-label="フォトンの性能">
                   <span>HP <strong>2</strong></span><span>SCORE <strong>1000</strong></span><span>SPEED <strong>×4</strong></span><span>TURN <strong>10%</strong></span>
                 </div>
@@ -196,7 +195,7 @@
                 </div>
               </div>
               <div class="enemy-preview-text">
-                <span class="unit-index">ENEMY TYPE / 07</span><h3>REAPER</h3><p>Returning boomerang attacker</p>
+                <span class="unit-index">ENEMY TYPE / 06</span><h3>REAPER</h3><p>Returning boomerang attacker</p>
                 <div class="unit-stats" aria-label="REAPERの性能">
                   <span>HP <strong>5</strong></span><span>SCORE <strong>1600</strong></span><span>SPEED <strong>×0.9</strong></span><span>TURN <strong>50%</strong></span>
                 </div>
