@@ -1954,30 +1954,59 @@ h1 span {
 .enemy-drone.enemy-devil.is-angry { animation: devil-rage-pulse 180ms linear infinite alternate; filter: drop-shadow(0 0 12px #ff2600); }
 @keyframes devil-rage-pulse { from { filter:brightness(1.1) drop-shadow(0 0 7px #ff2600); } to { filter:brightness(1.8) drop-shadow(0 0 18px #ff7a00); } }
 .enemy-drone.enemy-soul { border-radius: 50% 50% 24% 24%; clip-path: polygon(0 0,100% 0,100% 75%,75% 100%,50% 81%,25% 100%,0 75%); }
-/* Knight helmet crest and horizontal visor replace the former fox ears. */
+/* Knight redesign: obsidian armor, gold brow, crimson plume and a bright red visor. */
 .enemy-drone.enemy-knight:not(.is-exploding)::before {
-  content: ""; position: absolute; z-index: 4; top: -8px; left: 50%;
-  width: 13px; height: 18px; transform: translateX(-50%);
-  background: linear-gradient(135deg,#fff9e8 0%,#b7c8e2 42%,#51678b 100%);
-  border: 1px solid #e4ecf8;
-  clip-path: polygon(50% 0,100% 76%,50% 100%,0 76%);
+  content: ""; position: absolute; z-index: 6; top: -11px; left: 50%;
+  width: 9px; height: 19px; transform: translateX(-50%);
+  border: 1px solid #ffd7a0; border-radius: 75% 75% 25% 25%;
+  background: linear-gradient(90deg,#6f1228 0%,#ff6a79 42%,#8e1430 75%,#390b20 100%);
+  clip-path: polygon(50% 0,100% 100%,50% 78%,0 100%);
+  box-shadow: 0 0 8px rgba(255,65,94,.9);
 }
 .enemy-drone.enemy-knight:not(.is-exploding)::after {
-  content: ""; position: absolute; z-index: 5; top: 18px; left: 4px; right: 4px; height: 5px;
-  border: 1px solid #ffe4a0; border-radius: 2px;
-  background: linear-gradient(180deg,#fff5c9 0%,#e3b65e 45%,#70502b 100%);
-  box-shadow: 0 0 7px rgba(255,220,138,.75);
+  content: ""; position: absolute; z-index: 5; top: 9px; left: 4px; right: 4px; height: 8px;
+  border: 1px solid #f4d28a; border-radius: 2px;
+  background: linear-gradient(180deg,#ffeab2 0%,#bc8c3f 48%,#593a24 100%);
+  clip-path: polygon(0 0,100% 0,85% 100%,50% 62%,15% 100%);
+  box-shadow: 0 0 7px rgba(255,197,105,.72);
 }
 .enemy-drone.enemy-knight .drone-ring {
-  inset: 4px 3px; border-width: 2px; border-radius: 5px;
+  inset: 3px 2px; border-width: 2px; border-radius: 7px;
+  border-color: #e6ba67; border-left-color: #75324a; border-right-color: #75324a;
   transform: rotate(var(--enemy-facing-angle,0deg));
 }
 .enemy-drone.enemy-knight .drone-eye {
-  width: 18px; height: 5px; border: 1px solid #fff3c1;
-  border-radius: 2px; background: linear-gradient(90deg,#17253c,#fef0a3 28% 72%,#17253c);
-  box-shadow: 0 0 8px rgba(255,220,120,.95);
+  width: 19px; height: 5px; border: 1px solid #ffb0b4;
+  border-radius: 2px; background: linear-gradient(90deg,#4d071b 0%,#ff4e62 22%,#fff2ce 50%,#ff4e62 78%,#4d071b 100%);
+  box-shadow: 0 0 5px #ffb0b4,0 0 13px rgba(255,31,74,.98);
 }
-.enemy-drone.is-guarding { box-shadow: 0 0 0 6px rgba(255,255,255,.78),0 0 20px rgba(255,235,175,.9); filter:brightness(1.6); }
+.enemy-drone.is-guarding { box-shadow: 0 0 0 4px rgba(255,230,159,.92),0 0 24px rgba(255,190,91,.95); filter:brightness(1.85); }
+.enemy-drone.enemy-knight .knight-guard-effect {
+  display: none; position: absolute; z-index: 8; left: 50%; top: 50%;
+  width: 32px; height: 35px; pointer-events: none;
+  border: 2px solid #ffe6a0; border-radius: 8px 8px 13px 13px;
+  background: linear-gradient(135deg,rgba(255,255,226,.98) 0%,rgba(255,202,91,.88) 36%,rgba(255,84,97,.82) 72%,rgba(128,13,45,.8) 100%);
+  clip-path: polygon(10% 0,90% 0,100% 22%,82% 76%,50% 100%,18% 76%,0 22%);
+  box-shadow: 0 0 10px #ffe6a0,0 0 22px rgba(255,95,98,.95);
+  transform: translate(-50%,-50%) rotate(var(--enemy-facing-angle,0deg)) translateY(-31px) scale(.55);
+  opacity: 0;
+}
+.enemy-drone.enemy-knight.is-guarding .knight-guard-effect {
+  display: block; animation: knight-shield-block 260ms cubic-bezier(.12,.8,.25,1) both;
+}
+.enemy-drone.enemy-knight.is-guarding .knight-guard-effect::before,
+.enemy-drone.enemy-knight.is-guarding .knight-guard-effect::after {
+  content: ""; position: absolute; top: 50%; width: 10px; height: 3px;
+  background: #fffbe1; box-shadow: 0 0 8px #fffbe1;
+}
+.enemy-drone.enemy-knight.is-guarding .knight-guard-effect::before { left: -9px; transform: rotate(-28deg); }
+.enemy-drone.enemy-knight.is-guarding .knight-guard-effect::after { right: -9px; transform: rotate(28deg); }
+@keyframes knight-shield-block {
+  0% { opacity: 0; transform: translate(-50%,-50%) rotate(var(--enemy-facing-angle,0deg)) translateY(-25px) scale(.35); filter:brightness(1.8); }
+  32% { opacity: 1; transform: translate(-50%,-50%) rotate(var(--enemy-facing-angle,0deg)) translateY(-32px) scale(1.15); filter:brightness(2.1); }
+  72% { opacity: .98; transform: translate(-50%,-50%) rotate(var(--enemy-facing-angle,0deg)) translateY(-31px) scale(1); filter:brightness(1.35); }
+  100% { opacity: 0; transform: translate(-50%,-50%) rotate(var(--enemy-facing-angle,0deg)) translateY(-31px) scale(.92); filter:brightness(1); }
+}
 .enemy-drone.enemy-fade:not(.is-exploding)::after { content:""; position:absolute; inset:-5px; border:1px dotted rgba(203,187,255,.9); border-radius:50%; }
 .enemy-drone.enemy-zigzag .drone-ring { transform: rotate(65deg); }
 .enemy-drone.enemy-tank .drone-eye { border-radius:3px; width:9px; height:9px; }
@@ -1996,10 +2025,10 @@ h1 span {
 .enemy-drone.enemy-soul .drone-ring { border-color:#e1fbff;border-left-color:#65c4e4;border-right-color:#65c4e4; }
 .enemy-drone.enemy-soul .drone-eye { background:radial-gradient(circle,#fff 0 15%,#c6f7ff 34%,#3185b6 77%);box-shadow:0 0 8px #e1fbff,0 0 16px #58d7ff; }
 .enemy-preview-portrait--knight { border-color:rgba(190,213,246,.58); background:radial-gradient(circle,rgba(116,162,226,.24),transparent 68%),linear-gradient(145deg,#18283d,#090b16); }
-.enemy-drone.enemy-knight { border:2px solid #cbd8ed; border-radius:24% 24% 34% 34%; background:linear-gradient(145deg,#eaf0fc 0%,#7890b1 26%,#344965 59%,#111b2f 100%); box-shadow:inset -5px -6px 0 rgba(0,0,0,.62),inset 3px 3px 0 rgba(255,255,255,.42),0 0 10px rgba(129,170,232,.9),0 0 23px rgba(79,132,214,.45); }
-.enemy-drone.enemy-knight .drone-aura { border-color:rgba(202,220,249,.72); box-shadow:0 0 10px rgba(145,183,235,.42),inset 0 0 8px rgba(207,226,255,.2); }
-.enemy-drone.enemy-knight .drone-ring { border-color:#edf3ff; border-left-color:#8098ba; border-right-color:#8098ba; }
-.enemy-drone.enemy-knight .drone-light { background:#ffe5a0; box-shadow:0 0 6px #ffe5a0,0 0 12px rgba(255,202,105,.7); }
+.enemy-drone.enemy-knight { border:2px solid #d5b46a; border-radius:21% 21% 32% 32%; background:linear-gradient(145deg,#603044 0%,#252235 30%,#101321 67%,#060811 100%); box-shadow:inset -5px -6px 0 rgba(0,0,0,.72),inset 3px 3px 0 rgba(255,230,174,.18),0 0 9px rgba(255,81,110,.68),0 0 22px rgba(121,20,52,.72); }
+.enemy-drone.enemy-knight .drone-aura { border-color:rgba(255,112,126,.68); box-shadow:0 0 11px rgba(255,38,76,.5),inset 0 0 9px rgba(255,184,126,.18); }
+.enemy-drone.enemy-knight .drone-ring { border-color:#ffe3a0; border-left-color:#7a1f40; border-right-color:#7a1f40; }
+.enemy-drone.enemy-knight .drone-light { background:#ffd789; box-shadow:0 0 6px #ffe6a0,0 0 12px rgba(255,72,95,.9); }
 
 
 /* Deployment buttons sit above decorative sprites. */
