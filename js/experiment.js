@@ -34,8 +34,7 @@
     dash: { value: document.querySelector("#enemy-dash-count-value"), decrease: document.querySelector("#enemy-dash-count-decrease"), increase: document.querySelector("#enemy-dash-count-increase") },
     zigzag: { value: document.querySelector("#enemy-zigzag-count-value"), decrease: document.querySelector("#enemy-zigzag-count-decrease"), increase: document.querySelector("#enemy-zigzag-count-increase") },
     fade: { value: document.querySelector("#enemy-fade-count-value"), decrease: document.querySelector("#enemy-fade-count-decrease"), increase: document.querySelector("#enemy-fade-count-increase") },
-    fox: { value: document.querySelector("#enemy-fox-count-value"), decrease: document.querySelector("#enemy-fox-count-decrease"), increase: document.querySelector("#enemy-fox-count-increase") },
-    acidfox: { value: document.querySelector("#enemy-acidfox-count-value"), decrease: document.querySelector("#enemy-acidfox-count-decrease"), increase: document.querySelector("#enemy-acidfox-count-increase") },
+    knight: { value: document.querySelector("#enemy-knight-count-value"), decrease: document.querySelector("#enemy-knight-count-decrease"), increase: document.querySelector("#enemy-knight-count-increase") },
     chameleon: { value: document.querySelector("#enemy-chameleon-count-value"), decrease: document.querySelector("#enemy-chameleon-count-decrease"), increase: document.querySelector("#enemy-chameleon-count-increase") }
   };
   const gameStartButton = document.querySelector("#game-start-button");
@@ -76,17 +75,16 @@
     dash: { hp: 2, points: 250, speed: 1, turnChance: 0.45, behavior: "dash", alertSpeed: 2.5 },
     zigzag: { hp: 1, points: 400, speed: 2.7, turnChance: 0.60, junctionTurnChance: 0.50, behavior: "zigzag", ignoresSoftBlocks: true },
     fade: { hp: 4, points: 800, speed: 1.5, turnChance: 0.50, behavior: "fade" },
-    fox: { hp: 3, points: 1600, speed: 1.3, turnChance: 0.60, behavior: "fox", guardsFront: true },
-    acidfox: { hp: 5, points: 6400, speed: 1.5, turnChance: 0.90, behavior: "acidfox", guardsFront: true, poisonAttack: true },
-    chameleon: { hp: 2, points: 800, speed: 1, turnChance: 0.30, behavior: "chameleon" }
+    knight: { hp: 3, points: 1600, speed: 1.2, turnChance: 0.60, pursuitTurnChance: 0.25, behavior: "knight", guardsFront: true },
+    chameleon: { hp: 2, points: 800, speed: 1.2, turnChance: 0.50, disguisedTurnChance: 1, behavior: "chameleon" }
   };
-  const configuredEnemyCounts = { drone: 3, tank: 0, scout: 0, hunter: 0, battery: 0, photon: 0, reaper: 0, dash: 0, zigzag: 0, fade: 0, fox: 0, acidfox: 0, chameleon: 0 };
+  const configuredEnemyCounts = { drone: 3, tank: 0, scout: 0, hunter: 0, battery: 0, photon: 0, reaper: 0, dash: 0, zigzag: 0, fade: 0, knight: 0, chameleon: 0 };
   const MAX_TOTAL_ENEMIES = 20;
   const ENEMY_COUNT_LIMITS = {
     drone: { min: 0, max: 8 }, tank: { min: 0, max: 8 }, scout: { min: 0, max: 8 },
     hunter: { min: 0, max: 8 }, battery: { min: 0, max: 8 }, photon: { min: 0, max: 8 },
     reaper: { min: 0, max: 8 }, dash: { min: 0, max: 8 }, zigzag: { min: 0, max: 8 }, fade: { min: 0, max: 8 },
-    fox: { min: 0, max: 8 }, acidfox: { min: 0, max: 8 }, chameleon: { min: 0, max: 8 }
+    knight: { min: 0, max: 8 }, chameleon: { min: 0, max: 8 }
   };
   let gameStarted = false;
   const enemyUnits = [];
@@ -124,15 +122,11 @@
   const REAPER_FIRE_INTERVAL_MS = 12000;
   const REAPER_PREPARE_DURATION_MS = 1500;
   const REAPER_RECOVERY_DURATION_MS = 750;
-  const ACID_POISON_MIN_MS = 8000;
-  const ACID_POISON_MAX_MS = 10000;
   const BATTERY_FIRE_INTERVAL_MS = 10000;
   const BATTERY_WARNING_BLINK_INTERVAL_MS = 600;
   const BATTERY_WARNING_BLINK_COUNT = 3;
   const BATTERY_WARNING_DURATION_MS = BATTERY_WARNING_BLINK_INTERVAL_MS * BATTERY_WARNING_BLINK_COUNT;
-  const ACID_POISON_PROJECTILE_SPEED_VALUE = 2.5;
   const BATTERY_PROJECTILE_SPEED_VALUE = PLAYER_BOOMERANG_SPEED_VALUE * 0.6; // x2.4; preserve the previous turret/player ratio.
-  const ACID_POISON_PROJECTILE_SPEED = ENEMY_SPEED * ACID_POISON_PROJECTILE_SPEED_VALUE;
   const BATTERY_PROJECTILE_SPEED = ENEMY_SPEED * BATTERY_PROJECTILE_SPEED_VALUE;
   const REAPER_DIRECT_AIM_DISTANCE_CELLS = 5;
   const DASH_WINDUP_MS = 750;
@@ -143,7 +137,6 @@
   function getInitialActionAt(typeKey, now) {
     if (typeKey === "battery") return now + BATTERY_FIRE_INTERVAL_MS - BATTERY_WARNING_DURATION_MS;
     if (typeKey === "reaper") return now + 1800 + Math.random() * 1800 - REAPER_PREPARE_DURATION_MS;
-    if (typeKey === "acidfox") return now + ACID_POISON_MIN_MS + Math.random() * (ACID_POISON_MAX_MS - ACID_POISON_MIN_MS);
     return now + 1800 + Math.random() * 1800;
   }
 
@@ -227,14 +220,14 @@
         element.classList.remove(
           "enemy-tank", "enemy-scout", "enemy-hunter", "enemy-battery", "enemy-photon",
           "enemy-reaper", "enemy-dash", "enemy-zigzag", "enemy-fade",
-          "enemy-fox", "enemy-acidfox", "enemy-chameleon",
+          "enemy-knight", "enemy-chameleon",
           "is-exploding", "is-guarding", "is-disguised", "is-chasing", "is-charging", "is-winding-up", "is-phasing", "is-recovering", "tank-hp-3", "tank-hp-2", "tank-hp-1"
         );
         element.classList.toggle("enemy-drone-unit", typeKey === "drone" || typeKey === "scout" || typeKey === "photon");
         if (typeKey !== "drone") element.classList.add("enemy-" + typeKey);
         element.hidden = false;
         element.setAttribute("aria-hidden", "false");
-        element.setAttribute("aria-label", typeKey === "drone" ? "敵キャラクター。ドローン" : "敵キャラクター。" + typeKey.toUpperCase());
+        element.setAttribute("aria-label", typeKey === "drone" ? "敵キャラクター。ドローン" : typeKey === "knight" ? "敵キャラクター。Knight（騎士）" : "敵キャラクター。" + typeKey.toUpperCase());
         element.dataset.enemyType = typeKey;
         const type = ENEMY_TYPES[typeKey];
         const unit = {
@@ -256,10 +249,27 @@
           batteryFireAt: 0,
           alerting: false,
           chasing: false,
-          nextDisguiseAt: performance.now() + 15000,
+          nextDisguiseAt: performance.now() + 20000,
           disguisedUntil: 0,
-          disguised: false
+          disguised: false,
+          disguiseElement: null
         };
+        if (typeKey === "chameleon") {
+          const disguiseElement = player.cloneNode(true);
+          disguiseElement.removeAttribute("id");
+          disguiseElement.removeAttribute("role");
+          disguiseElement.removeAttribute("aria-label");
+          disguiseElement.setAttribute("aria-hidden", "true");
+          disguiseElement.classList.add("chameleon-player-disguise");
+          disguiseElement.classList.remove("is-dying", "is-respawning");
+          disguiseElement.style.left = "50%";
+          disguiseElement.style.top = "50%";
+          disguiseElement.style.setProperty("--trail-x", "0px");
+          disguiseElement.style.setProperty("--trail-y", "0px");
+          disguiseElement.hidden = true;
+          unit.disguiseElement = disguiseElement;
+          element.appendChild(disguiseElement);
+        }
         renderEnemyAppearance(unit);
         element.addEventListener("animationend", event => {
           if ((event.animationName === "enemy-drone-explode" || event.animationName === "enemy-drone-unit-explode" || event.animationName === "enemy-tank-explode") && !unit.alive) element.hidden = true;
@@ -338,7 +348,8 @@
       unit.speed = unit.type.speed;
       unit.disguised = false;
       unit.disguisedUntil = 0;
-      unit.nextDisguiseAt = performance.now() + 15000;
+      unit.nextDisguiseAt = performance.now() + 20000;
+      if (unit.disguiseElement) unit.disguiseElement.hidden = true;
       unit.chasing = false;
       unit.element.classList.remove("is-guarding", "is-disguised", "is-chasing", "is-charging", "is-winding-up", "is-phasing", "is-recovering");
       unit.nextShotAt = getInitialActionAt(unit.typeKey, performance.now());
@@ -408,7 +419,9 @@
       direction.x * unit.directionX + direction.y * unit.directionY === 0 &&
       canEnemyEnterCell(unit, unit.row + direction.y, unit.col + direction.x)
     );
-    const turnChance = unit.type.turnChance ?? unit.type.fallbackTurnChance ?? 0.40;
+    const turnChance = unit.typeKey === "chameleon" && unit.disguised
+      ? unit.type.disguisedTurnChance
+      : (unit.type.turnChance ?? unit.type.fallbackTurnChance ?? 0.40);
     // Drone bounceChance is the probability of reversing at a junction; other enemies use turnChance.
     const chanceToTurn = unit.type.bounceChance == null ? turnChance : 1 - unit.type.bounceChance;
     if (sideOptions.length > 0 && Math.random() < chanceToTurn) {
@@ -466,7 +479,7 @@
 
   function chooseStrategicDirection(unit, cellWidth, cellHeight) {
     const behavior = unit.type.behavior;
-    if (!["chase", "flee", "fox", "acidfox"].includes(behavior)) return null;
+    if (!["chase", "flee", "knight"].includes(behavior)) return null;
     const playerCell = getPlayerGridCell(cellWidth, cellHeight);
     if (!playerCell) return null;
     const distances = getReachableCellDistances(playerCell.row, playerCell.col, unit);
@@ -498,6 +511,32 @@
     return bestOptions[Math.floor(Math.random() * bestOptions.length)].direction;
   }
 
+  function chooseKnightPursuitTurn(unit, cellWidth, cellHeight) {
+    const exits = ENEMY_DIRECTIONS.filter(direction =>
+      canEnemyEnterCell(unit, unit.row + direction.y, unit.col + direction.x)
+    );
+    if (exits.length < 3 || Math.random() >= unit.type.pursuitTurnChance) return null;
+
+    const playerCell = getPlayerGridCell(cellWidth, cellHeight);
+    if (!playerCell) return null;
+    const distances = getReachableCellDistances(playerCell.row, playerCell.col, unit);
+    const currentDistance = distances.get(cellKey(unit.row, unit.col));
+    if (currentDistance === undefined) return null;
+
+    // Only take a turn that strictly shortens the route to the player.
+    const options = exits
+      .filter(direction => direction.x !== unit.directionX || direction.y !== unit.directionY)
+      .map(direction => ({
+        direction,
+        distance: distances.get(cellKey(unit.row + direction.y, unit.col + direction.x))
+      }))
+      .filter(option => option.distance !== undefined && option.distance < currentDistance);
+    if (!options.length) return null;
+    const bestDistance = Math.min(...options.map(option => option.distance));
+    const bestOptions = options.filter(option => option.distance === bestDistance);
+    return bestOptions[Math.floor(Math.random() * bestOptions.length)].direction;
+  }
+
   function isDashLineClear(unit, playerCell) {
     if (unit.row !== playerCell.row && unit.col !== playerCell.col) return false;
     const dr = Math.sign(playerCell.row - unit.row), dc = Math.sign(playerCell.col - unit.col);
@@ -514,11 +553,30 @@
     if (!unit.disguised && time >= unit.nextDisguiseAt) {
       unit.disguised = true;
       unit.disguisedUntil = time + 10000;
-      unit.nextDisguiseAt = time + 15000;
+      unit.nextDisguiseAt = 0;
       unit.element.classList.add("is-disguised");
+      if (unit.disguiseElement) unit.disguiseElement.hidden = false;
     } else if (unit.disguised && time >= unit.disguisedUntil) {
       unit.disguised = false;
+      unit.nextDisguiseAt = time + 20000;
       unit.element.classList.remove("is-disguised");
+      if (unit.disguiseElement) unit.disguiseElement.hidden = true;
+    }
+    if (unit.disguised && unit.disguiseElement) {
+      const mirroredClasses = player.className.split(/\s+/).filter(className =>
+        className && className !== "is-dying" && className !== "is-respawning"
+      );
+      mirroredClasses.push("chameleon-player-disguise");
+      const mirroredClassName = [...new Set(mirroredClasses)].join(" ");
+      if (unit.disguiseElement.className !== mirroredClassName) {
+        unit.disguiseElement.className = mirroredClassName;
+      }
+      for (const property of ["--trail-x", "--trail-y"]) {
+        const value = player.style.getPropertyValue(property) || "0px";
+        if (unit.disguiseElement.style.getPropertyValue(property) !== value) {
+          unit.disguiseElement.style.setProperty(property, value);
+        }
+      }
     }
   }
 
@@ -593,10 +651,6 @@
         unit.nextShotAt = time + BATTERY_FIRE_INTERVAL_MS - BATTERY_WARNING_DURATION_MS;
       }
     }
-    if (unit.type.behavior === "acidfox" && time >= unit.nextShotAt) {
-      launchEnemyPoison(unit);
-      unit.nextShotAt = time + ACID_POISON_MIN_MS + Math.random() * (ACID_POISON_MAX_MS - ACID_POISON_MIN_MS);
-    }
     let guard = 0;
     while (remaining > 0 && guard < 8) {
       const centerX = (unit.col + 0.5) * cellWidth;
@@ -661,10 +715,11 @@
         leaveFadeTrail(unit);
         unit.directionX = Math.sign(escapeCell.col - unit.col);
         unit.directionY = Math.sign(escapeCell.row - unit.row);
-      } else if (atCellCenter && (unit.type.behavior === "fox" || unit.type.behavior === "acidfox")) {
-        if (Math.random() < unit.type.turnChance) {
-          const strategicDirection = chooseStrategicDirection(unit, cellWidth, cellHeight);
-          if (strategicDirection) { unit.directionX = strategicDirection.x; unit.directionY = strategicDirection.y; }
+      } else if (atCellCenter && unit.type.behavior === "knight") {
+        const pursuitDirection = chooseKnightPursuitTurn(unit, cellWidth, cellHeight);
+        if (pursuitDirection) {
+          unit.directionX = pursuitDirection.x;
+          unit.directionY = pursuitDirection.y;
         }
       } else if (atCellCenter && unit.type.behavior === "zigzag") {
         const exits = ENEMY_DIRECTIONS.filter(d => canEnemyEnterCell(unit, unit.row + d.y, unit.col + d.x));
@@ -859,11 +914,6 @@
     });
   }
 
-  function launchEnemyPoison(unit) {
-    const element = createEnemyProjectileElement("enemy-poison-projectile", unit.x, unit.y);
-    enemyProjectiles.push({kind: "poison", element, owner: unit, x: unit.x, y: unit.y, directionX: unit.directionX, directionY: unit.directionY, returning: false, speed: ACID_POISON_PROJECTILE_SPEED});
-  }
-
   function launchBatteryShot(unit) {
     const dx = x - unit.x;
     const dy = y - unit.y;
@@ -884,7 +934,6 @@
   }
 
   function updateEnemyBoomerangs(delta, time) {
-    const cellWidth = arena.clientWidth / GRID_COLUMNS, cellHeight = arena.clientHeight / GRID_ROWS;
     for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
       const shot = enemyProjectiles[i];
       const removeShot = () => { shot.element.remove(); enemyProjectiles.splice(i, 1); };
@@ -896,13 +945,6 @@
         const outsideArena = shot.x < 0 || shot.x > arena.clientWidth ||
           shot.y < 0 || shot.y > arena.clientHeight;
         if (outsideArena) { removeShot(); continue; }
-      } else if (shot.kind === "poison") {
-        shot.x += shot.directionX * shot.speed * delta;
-        shot.y += shot.directionY * shot.speed * delta;
-        const row = Math.floor(shot.y / cellHeight), col = Math.floor(shot.x / cellWidth);
-        const outsideArena = row < 0 || row >= GRID_ROWS || col < 0 || col >= GRID_COLUMNS;
-        const hitHardBlock = !outsideArena && STAGE_MAP[row][col] === "1";
-        if (outsideArena || hitHardBlock) { removeShot(); continue; }
       } else if (!shot.returning) {
         const step = shot.speed * delta;
         shot.x += shot.directionX * step; shot.y += shot.directionY * step; shot.distance += step;
