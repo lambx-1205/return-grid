@@ -1793,7 +1793,7 @@ h1 span {
 .enemy-preview-portrait--dash{border-color:rgba(255,198,87,.4);background:radial-gradient(circle,rgba(255,174,45,.17),transparent 68%),#171108}.enemy-drone.enemy-dash{border-color:#ffd17b;box-shadow:inset -5px -6px 0 rgba(0,0,0,.7),0 0 9px #ffbd4b,0 0 20px rgba(255,174,45,.5)}.enemy-drone.enemy-dash .drone-ring{border-color:#ffe4a8;border-left-color:#9c5b0c;border-right-color:#9c5b0c}.enemy-drone.enemy-dash .drone-eye{background:radial-gradient(circle,#fff 0 12%,#ffd166 35%,#b35a00 75%);box-shadow:0 0 14px #ffbd4b}
 .enemy-preview-portrait--zigzag{border-color:rgba(75,255,226,.4);background:radial-gradient(circle,rgba(35,255,212,.18),transparent 68%),#041a19}.enemy-drone.enemy-zigzag{border-radius:25% 50% 25% 50%;border-color:#7effe6;box-shadow:inset -5px -6px 0 rgba(0,0,0,.7),0 0 9px #25e6c8,0 0 20px rgba(35,255,212,.5)}.enemy-drone.enemy-zigzag .drone-ring{border-color:#b5fff3;border-left-color:#087a70;border-right-color:#087a70;transform:rotate(65deg)}.enemy-drone.enemy-zigzag .drone-eye{background:radial-gradient(circle,#fff 0 12%,#6affdf 35%,#008b7c 75%);box-shadow:0 0 14px #25e6c8}
 .enemy-preview-portrait--fade{border-color:rgba(180,155,255,.4);background:radial-gradient(circle,rgba(140,100,255,.2),transparent 68%),#100b22}.enemy-drone.enemy-fade{border-color:#c7b5ff;opacity:.9;box-shadow:inset -5px -6px 0 rgba(0,0,0,.7),0 0 9px #a58aff,0 0 22px rgba(140,100,255,.65)}.enemy-drone.enemy-fade .drone-ring{border-color:#eee5ff;border-left-color:#6c45d9;border-right-color:#6c45d9}.enemy-drone.enemy-fade .drone-eye{background:radial-gradient(circle,#fff 0 12%,#c5aaff 35%,#6237c4 75%);box-shadow:0 0 14px #a58aff}
-.enemy-projectile{filter:hue-rotate(145deg) saturate(1.3);z-index:8}.enemy-fade-trail{pointer-events:none;opacity:.7;filter:blur(1px);animation:fade-trail-out 650ms ease-out forwards}@keyframes fade-trail-out{to{opacity:0;transform:scale(.55);filter:blur(5px)}}
+.enemy-projectile{filter:hue-rotate(145deg) saturate(1.3);z-index:8}.enemy-fade-trail{pointer-events:none;opacity:.24;filter:none;animation:fade-trail-lite-out 420ms ease-out forwards}@keyframes fade-trail-lite-out{to{opacity:0;transform:translate(-50%,-50%) scale(.72)}}
 .enemy-total-count{margin:5px 0 0;color:var(--cyan);font-size:.62rem;font-weight:850;letter-spacing:.1em;text-align:right}
 
 
@@ -2784,20 +2784,12 @@ h1 span {
   box-shadow: 0 0 6px #63ff91, 0 0 15px rgba(48, 255, 102, .95);
 }
 @keyframes battery-warning-flash {
-  0%, 49% {
-    background: linear-gradient(145deg, #a3ffc0 0%, #287c43 28%, #102d1c 70%, #071b10 100%);
-    box-shadow: inset 0 0 0 2px rgba(2, 12, 5, .9), 0 0 8px #53ff89, 0 0 24px rgba(30, 255, 95, .95), 0 0 38px rgba(30, 255, 95, .55);
-    filter: brightness(1.65);
-  }
-  50%, 100% {
-    background: linear-gradient(145deg, #526b59 0%, #293d30 28%, #121f17 70%, #080f0a 100%);
-    box-shadow: inset 0 0 0 2px rgba(2, 12, 5, .9), 0 0 2px rgba(60, 255, 115, .5), 0 0 8px rgba(30, 255, 95, .38);
-    filter: brightness(.9);
-  }
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: .42; }
 }
 @keyframes battery-warning-core {
-  0%, 49% { box-shadow: inset 0 0 0 2px #103a20, 0 0 8px #75ff9b, 0 0 20px rgba(40, 255, 105, 1); }
-  50%, 100% { box-shadow: inset 0 0 0 2px #103a20, 0 0 2px rgba(40, 255, 105, .4); }
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: .35; }
 }
 
 /* REAPER: replace the organic shell with a compact armored robot head. */
@@ -2944,4 +2936,158 @@ h1 span {
   border-color: #e7d5ff;
   background: #a96aff;
   box-shadow: 0 0 4px #b987ff;
+}
+
+
+/* Enemy redesign and low-overhead movement effects. */
+.enemy-drone.enemy-dash:not(.is-exploding) {
+  box-sizing: border-box;
+  width: 34px;
+  height: 40px;
+  border: 2px solid #ffd17b;
+  border-radius: 9px 9px 5px 5px;
+  background: linear-gradient(90deg, #3e280d 0%, #a66b1b 16%, #ffca68 43%, #71430d 73%, #22170b 100%);
+  box-shadow: inset 0 0 0 2px rgba(18, 13, 5, .75), inset 0 0 8px rgba(255, 220, 142, .28), 0 0 6px rgba(255, 175, 54, .6);
+  transform: translate(-50%, -50%) rotate(var(--enemy-facing-angle, 0deg)) scale(var(--drone-scale, 1));
+  transform-origin: center;
+}
+.enemy-drone.enemy-dash:not(.is-exploding)::before {
+  content: "";
+  position: absolute;
+  z-index: 7;
+  top: -7px;
+  left: 50%;
+  width: 21px;
+  height: 13px;
+  border: 1px solid #fff0be;
+  background: linear-gradient(180deg, #fff0bd, #ffc24e 45%, #8e4e0b);
+  clip-path: polygon(50% 0, 100% 100%, 50% 78%, 0 100%);
+  transform: translateX(-50%);
+  box-shadow: 0 0 5px rgba(255, 187, 67, .55);
+}
+.enemy-drone.enemy-dash:not(.is-exploding)::after {
+  content: "";
+  position: absolute;
+  z-index: 5;
+  top: auto;
+  left: 50%;
+  right: auto;
+  bottom: 4px;
+  width: 19px;
+  height: 6px;
+  border: 1px solid #e99d38;
+  border-radius: 2px;
+  background: repeating-linear-gradient(90deg, #281b0b 0 3px, #ffb34c 3px 4px);
+  transform: translateX(-50%);
+}
+.enemy-drone.enemy-dash .drone-ring {
+  inset: 9px 5px 12px;
+  border: 1px solid rgba(255, 226, 160, .9);
+  border-radius: 4px;
+  transform: none;
+}
+.enemy-drone.enemy-dash .drone-eye {
+  top: 17px;
+  width: 17px;
+  height: 5px;
+  border: 1px solid #fff8d8;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #442707, #fff8d2 50%, #ffb638);
+  box-shadow: 0 0 5px rgba(255, 201, 95, .8);
+}
+.enemy-drone.enemy-dash .drone-light {
+  z-index: 8;
+  top: auto;
+  bottom: 10px;
+  width: 4px;
+  height: 4px;
+  background: #ffc857;
+  box-shadow: 0 0 3px #ffb83d;
+}
+.enemy-drone.enemy-dash.is-winding-up:not(.is-exploding) {
+  opacity: .7;
+  animation: dash-windup-light 180ms steps(2, end) infinite alternate;
+}
+.enemy-drone.enemy-dash.is-charging:not(.is-exploding) {
+  border-color: #fff5c3;
+  box-shadow: inset 0 0 0 2px rgba(18, 13, 5, .75), 0 0 8px #ffc65a, 0 0 18px rgba(255, 170, 45, .78);
+}
+@keyframes dash-windup-light {
+  from { opacity: .65; }
+  to { opacity: 1; }
+}
+
+.enemy-drone.enemy-zigzag:not(.is-exploding) {
+  box-sizing: border-box;
+  width: 35px;
+  height: 35px;
+  border: 2px solid #8affea;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 27%, #eafffb 0 5%, #60e9d3 18%, #138f85 48%, #063a43 78%, #041a24 100%);
+  box-shadow: inset 0 0 0 3px rgba(175, 255, 245, .16), inset 0 -5px 9px rgba(0, 13, 25, .65), 0 0 7px rgba(35, 255, 212, .5);
+}
+.enemy-drone.enemy-zigzag:not(.is-exploding)::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(223, 255, 252, .9);
+  border-radius: 50%;
+  background: radial-gradient(circle, #eaffff 0 7%, #7affdf 17%, #0b7775 43%, transparent 48%);
+  box-shadow: 0 0 5px rgba(102, 255, 227, .6);
+}
+.enemy-drone.enemy-zigzag:not(.is-exploding)::after {
+  content: "";
+  position: absolute;
+  z-index: 5;
+  top: 5px;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #f6ffff;
+  box-shadow: 0 0 5px #91fff0;
+  transform: translateX(-50%);
+}
+.enemy-drone.enemy-zigzag .drone-ring { display: none !important; }
+.enemy-drone.enemy-zigzag .drone-eye {
+  top: 15px;
+  width: 10px;
+  height: 5px;
+  border: 1px solid #d9fffa;
+  border-radius: 50%;
+  background: #d9fffa;
+  box-shadow: 0 0 6px #7dffea;
+}
+
+.enemy-drone.enemy-fade:not(.is-exploding) {
+  border-style: solid;
+  border-width: 2px;
+  border-radius: 50% 43% 47% 46%;
+  background: radial-gradient(circle at 33% 25%, rgba(255, 255, 255, .95) 0 4%, rgba(194, 173, 255, .85) 17%, rgba(98, 70, 179, .9) 49%, rgba(28, 16, 58, .96) 100%);
+  box-shadow: inset 0 0 0 3px rgba(223, 211, 255, .18), 0 0 6px rgba(165, 128, 255, .48);
+}
+.enemy-drone.enemy-fade.is-phasing:not(.is-exploding) {
+  opacity: .2 !important;
+  border-color: rgba(224, 213, 255, .6);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .08), 0 0 5px rgba(165, 128, 255, .2);
+  transition: opacity 60ms linear;
+}
+.enemy-drone.enemy-fade-trail {
+  pointer-events: none;
+  opacity: .2 !important;
+  filter: none !important;
+  border-style: solid;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .06), 0 0 5px rgba(165, 128, 255, .16);
+  animation: fade-trail-lite-out 420ms ease-out forwards;
+}
+@keyframes fade-trail-lite-out {
+  from { opacity: .24; transform: translate(-50%, -50%) scale(1); }
+  to { opacity: 0; transform: translate(-50%, -50%) scale(.72); }
+}
+
+/* Keep BATTERY's warning bright but animate opacity, not blur/filter-heavy shadows. */
+.enemy-drone.enemy-battery.is-charging:not(.is-exploding) {
+  background: linear-gradient(145deg, #9affb6 0%, #287c43 28%, #102d1c 70%, #071b10 100%);
+  box-shadow: inset 0 0 0 2px rgba(2, 12, 5, .9), 0 0 8px #53ff89, 0 0 22px rgba(30, 255, 95, .85);
+  animation: battery-warning-flash 600ms ease-in-out 3;
 }
