@@ -1954,30 +1954,29 @@ h1 span {
 .enemy-drone.enemy-devil.is-angry { animation: devil-rage-pulse 180ms linear infinite alternate; filter: drop-shadow(0 0 12px #ff2600); }
 @keyframes devil-rage-pulse { from { filter:brightness(1.1) drop-shadow(0 0 7px #ff2600); } to { filter:brightness(1.8) drop-shadow(0 0 18px #ff7a00); } }
 .enemy-drone.enemy-soul { border-radius: 50% 50% 24% 24%; clip-path: polygon(0 0,100% 0,100% 75%,75% 100%,50% 81%,25% 100%,0 75%); }
-.enemy-drone.enemy-fox:not(.is-exploding)::before,
-.enemy-drone.enemy-fox:not(.is-exploding)::after,
-.enemy-drone.enemy-acidfox:not(.is-exploding)::before,
-.enemy-drone.enemy-acidfox:not(.is-exploding)::after {
-  content: "";
-  position: absolute;
-  top: -7px;
-  width: 13px;
-  height: 18px;
-  background: linear-gradient(135deg,#fff4d6,#e6a14f 55%,#713a18);
-  border: 1px solid rgba(255,239,199,.88);
-  clip-path: polygon(50% 0,100% 100%,0 78%);
-  z-index: 4;
+/* Knight helmet crest and horizontal visor replace the former fox ears. */
+.enemy-drone.enemy-knight:not(.is-exploding)::before {
+  content: ""; position: absolute; z-index: 4; top: -8px; left: 50%;
+  width: 13px; height: 18px; transform: translateX(-50%);
+  background: linear-gradient(135deg,#fff9e8 0%,#b7c8e2 42%,#51678b 100%);
+  border: 1px solid #e4ecf8;
+  clip-path: polygon(50% 0,100% 76%,50% 100%,0 76%);
 }
-.enemy-drone.enemy-fox:not(.is-exploding)::before,
-.enemy-drone.enemy-acidfox:not(.is-exploding)::before { left: 3px; transform: rotate(-14deg); }
-.enemy-drone.enemy-fox:not(.is-exploding)::after,
-.enemy-drone.enemy-acidfox:not(.is-exploding)::after { right: 3px; transform: rotate(14deg) scaleX(-1); }
-.enemy-drone.enemy-fox .drone-ring,
-.enemy-drone.enemy-acidfox .drone-ring { inset: 4px 3px; border-width: 2px; border-radius: 5px; transform: rotate(var(--enemy-facing-angle,0deg)); }
-.enemy-drone.enemy-fox .drone-eye { border-radius: 35% 35% 50% 50%; width: 10px; height: 14px; }
-.enemy-drone.enemy-acidfox { border-width: 3px; border-style: double; }
-.enemy-drone.enemy-acidfox .drone-eye { width: 15px; height: 7px; border-radius: 45%; }
-.enemy-drone.enemy-acidfox .drone-light { width: 6px; height: 6px; }
+.enemy-drone.enemy-knight:not(.is-exploding)::after {
+  content: ""; position: absolute; z-index: 5; top: 18px; left: 4px; right: 4px; height: 5px;
+  border: 1px solid #ffe4a0; border-radius: 2px;
+  background: linear-gradient(180deg,#fff5c9 0%,#e3b65e 45%,#70502b 100%);
+  box-shadow: 0 0 7px rgba(255,220,138,.75);
+}
+.enemy-drone.enemy-knight .drone-ring {
+  inset: 4px 3px; border-width: 2px; border-radius: 5px;
+  transform: rotate(var(--enemy-facing-angle,0deg));
+}
+.enemy-drone.enemy-knight .drone-eye {
+  width: 18px; height: 5px; border: 1px solid #fff3c1;
+  border-radius: 2px; background: linear-gradient(90deg,#17253c,#fef0a3 28% 72%,#17253c);
+  box-shadow: 0 0 8px rgba(255,220,120,.95);
+}
 .enemy-drone.is-guarding { box-shadow: 0 0 0 6px rgba(255,255,255,.78),0 0 20px rgba(255,235,175,.9); filter:brightness(1.6); }
 .enemy-drone.enemy-fade:not(.is-exploding)::after { content:""; position:absolute; inset:-5px; border:1px dotted rgba(203,187,255,.9); border-radius:50%; }
 .enemy-drone.enemy-zigzag .drone-ring { transform: rotate(65deg); }
@@ -1986,12 +1985,9 @@ h1 span {
 .enemy-drone.enemy-dash .drone-ring { transform: rotate(45deg); border-radius:20%; }
 .enemy-drone.enemy-devil .drone-ring { border-radius:4px; border-width:2px; }
 .enemy-drone.enemy-soul .drone-eye { width:8px; height:12px; border-radius:45% 45% 55% 55%; }
-.enemy-projectile.enemy-poison-projectile { filter:none; border:2px solid #b7ff66; border-radius:50% 12% 50% 12%; background:radial-gradient(circle at 35% 35%,#fff 0 8%,#c9ff7d 16%,#58b62a 58%,#183a0c 100%); box-shadow:0 0 8px #a6ff52,0 0 18px rgba(103,255,53,.7); }
-.enemy-projectile.enemy-poison-projectile .projectile-rotor { display:none; }
-.enemy-projectile.enemy-poison-projectile::before { content:""; position:absolute; inset:5px; border:1px solid rgba(255,255,255,.85); border-radius:45%; transform:rotate(35deg); }
 
 
-/* Warm Devil, pale Soul, amber Fox and toxic Acid Fox use different palettes too. */
+/* Warm Devil, pale Soul, armored Knight and Chameleon use dedicated palettes. */
 .enemy-preview-portrait--devil { border-color:rgba(255,171,89,.55); background:radial-gradient(circle,rgba(255,85,22,.3),transparent 66%),linear-gradient(145deg,#28110b,#090710); }
 .enemy-drone.enemy-devil { border-color:#ffb36a; background:radial-gradient(circle at 38% 28%,#ffcf76 0 8%,#d84d25 29%,#57101d 61%,#12050d 100%); }
 .enemy-drone.enemy-devil .drone-eye { background:radial-gradient(circle,#fff3a3 0 12%,#ffb21f 33%,#e62414 70%); box-shadow:0 0 8px #fff0a5,0 0 20px #ff4a17; }
@@ -1999,13 +1995,11 @@ h1 span {
 .enemy-drone.enemy-soul { border-color:#aaf1ff; background:radial-gradient(circle at 38% 30%,#fff 0 8%,#b5f1ff 23%,#4c9eb8 55%,#10283d 100%); box-shadow:inset 0 -5px 0 rgba(25,88,130,.45),0 0 9px #7be4ff,0 0 20px rgba(95,208,255,.6); }
 .enemy-drone.enemy-soul .drone-ring { border-color:#e1fbff;border-left-color:#65c4e4;border-right-color:#65c4e4; }
 .enemy-drone.enemy-soul .drone-eye { background:radial-gradient(circle,#fff 0 15%,#c6f7ff 34%,#3185b6 77%);box-shadow:0 0 8px #e1fbff,0 0 16px #58d7ff; }
-.enemy-preview-portrait--fox { border-color:rgba(255,199,120,.48); background:radial-gradient(circle,rgba(240,153,60,.21),transparent 68%),linear-gradient(145deg,#29190a,#0a0b16); }
-.enemy-drone.enemy-fox { border-color:#ffc978; background:linear-gradient(145deg,#edb35f 0%,#8a4928 42%,#281222 100%); box-shadow:inset -5px -6px 0 rgba(0,0,0,.6),0 0 10px rgba(255,174,85,.8),0 0 20px rgba(255,129,51,.4); }
-.enemy-drone.enemy-fox .drone-eye { background:linear-gradient(90deg,#160b0b 0 32%,#fff0c1 34% 43%,#160b0b 46% 68%,#fff0c1 71% 80%,#160b0b 83%);border-radius:40%; }
-.enemy-preview-portrait--acidfox { border-color:rgba(171,255,106,.5); background:radial-gradient(circle,rgba(134,255,58,.22),transparent 68%),linear-gradient(145deg,#172b0a,#0a0b19); }
-.enemy-drone.enemy-acidfox { border-color:#c7ff7c; background:linear-gradient(145deg,#d8f783 0%,#5c9c2b 28%,#43205e 72%,#180b24 100%); box-shadow:inset 0 0 0 3px rgba(225,255,166,.3),0 0 12px #9cff3b,0 0 25px rgba(113,255,40,.62); }
-.enemy-drone.enemy-acidfox .drone-eye { background:radial-gradient(ellipse,#fff 0 14%,#e5ff86 25%,#85ef1f 53%,#315a10 100%); box-shadow:0 0 9px #f3ffb0,0 0 20px #85ef1f; }
-.enemy-drone.enemy-acidfox .drone-ring { border-color:#e8ffb9;border-left-color:#6c9f20;border-right-color:#6c9f20; }
+.enemy-preview-portrait--knight { border-color:rgba(190,213,246,.58); background:radial-gradient(circle,rgba(116,162,226,.24),transparent 68%),linear-gradient(145deg,#18283d,#090b16); }
+.enemy-drone.enemy-knight { border:2px solid #cbd8ed; border-radius:24% 24% 34% 34%; background:linear-gradient(145deg,#eaf0fc 0%,#7890b1 26%,#344965 59%,#111b2f 100%); box-shadow:inset -5px -6px 0 rgba(0,0,0,.62),inset 3px 3px 0 rgba(255,255,255,.42),0 0 10px rgba(129,170,232,.9),0 0 23px rgba(79,132,214,.45); }
+.enemy-drone.enemy-knight .drone-aura { border-color:rgba(202,220,249,.72); box-shadow:0 0 10px rgba(145,183,235,.42),inset 0 0 8px rgba(207,226,255,.2); }
+.enemy-drone.enemy-knight .drone-ring { border-color:#edf3ff; border-left-color:#8098ba; border-right-color:#8098ba; }
+.enemy-drone.enemy-knight .drone-light { background:#ffe5a0; box-shadow:0 0 6px #ffe5a0,0 0 12px rgba(255,202,105,.7); }
 
 
 /* Deployment buttons sit above decorative sprites. */
@@ -2026,26 +2020,23 @@ h1 span {
 .enemy-drone.enemy-chameleon .drone-ring { inset:6px 1px; border-radius:40% 15%; transform:rotate(-28deg); border-color:#edffb5; border-left-color:#51852f; border-right-color:#51852f; }
 .enemy-drone.enemy-chameleon .drone-eye { width:7px; height:12px; border-radius:45%; background:linear-gradient(90deg,#172718 0 25%,#f1ffae 35% 58%,#223b19 70%); }
 .enemy-drone.enemy-chameleon .drone-light { width:3px; height:3px; background:#ddff8a; }
+/* Chameleon disguise reuses the actual player DOM and its exact slime styling. */
 .enemy-drone.enemy-chameleon.is-disguised {
-  border:1px solid rgba(110,255,247,.95); border-radius:43% 43% 47% 47%;
-  background:linear-gradient(145deg,#c0fff5 0%,#48eedf 31%,#08bcb9 63%,#075777 100%);
-  box-shadow:inset -5px -6px 0 rgba(0,50,70,.3),inset 3px 3px 0 rgba(255,255,255,.4),0 0 11px #4dfff0,0 0 24px rgba(66,245,233,.8);
-  outline:2px dashed rgba(255,255,255,.8); outline-offset:3px;
+  border: 0 !important; background: transparent !important; box-shadow: none !important;
+  outline: none !important; overflow: visible;
+  transform: translate(-50%,-50%) !important;
 }
-.enemy-drone.enemy-chameleon.is-disguised .drone-aura,
-.enemy-drone.enemy-chameleon.is-disguised .drone-ring,
-.enemy-drone.enemy-chameleon.is-disguised .drone-light { display:none; }
-.enemy-drone.enemy-chameleon.is-disguised .drone-eye {
-  width:10px; height:14px; border:1px solid rgba(255,255,255,.95); border-radius:50%;
-  background:radial-gradient(circle at 35% 28%,#fff 0 16%,#263e4a 19% 67%,#071a28 72%); box-shadow:0 0 4px rgba(255,255,255,.8);
+.enemy-drone.enemy-chameleon .chameleon-player-disguise { display: none !important; }
+.enemy-drone.enemy-chameleon.is-disguised > :not(.chameleon-player-disguise) { display: none !important; }
+.enemy-drone.enemy-chameleon.is-disguised .chameleon-player-disguise {
+  display: block !important; position: absolute; left: 50%; top: 50%;
+  width: 60px; height: 60px; border: 0; border-radius: 0;
+  background: transparent; box-shadow: none; outline: none;
 }
 .enemy-drone.enemy-chameleon.is-disguised::before,
 .enemy-drone.enemy-chameleon.is-disguised::after {
-  content:""; position:absolute; top:23px; width:5px; height:4px; border-radius:50%; background:#ff92ae; box-shadow:0 0 5px rgba(255,100,147,.75);
+  content: none !important; display: none !important;
 }
-.enemy-drone.enemy-chameleon.is-disguised::before { left:4px; }
-.enemy-drone.enemy-chameleon.is-disguised::after { right:4px; }
-
 
 /* Cross-browser enemy defeat effect: separate DOM layers avoid dependence on animated pseudo-elements. */
 .enemy-drone.is-exploding::before,
