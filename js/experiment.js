@@ -270,13 +270,6 @@
           unit.disguiseElement = disguiseElement;
           element.appendChild(disguiseElement);
         }
-        if (typeKey === "knight") {
-          const guardEffect = document.createElement("span");
-          guardEffect.className = "knight-guard-effect";
-          guardEffect.setAttribute("aria-hidden", "true");
-          element.appendChild(guardEffect);
-          unit.guardEffect = guardEffect;
-        }
         renderEnemyAppearance(unit);
         element.addEventListener("animationend", event => {
           if ((event.animationName === "enemy-drone-explode" || event.animationName === "enemy-drone-unit-explode" || event.animationName === "enemy-tank-explode") && !unit.alive) element.hidden = true;
@@ -1557,6 +1550,19 @@
     defeatEnemy(unit, true);
   }
 
+  function showKnightGuardEffect(unit) {
+    if (unit.typeKey !== "knight") return;
+    const effect = document.createElement("span");
+    effect.className = "knight-guard-effect";
+    effect.setAttribute("aria-hidden", "true");
+    effect.style.left = unit.x + "px";
+    effect.style.top = unit.y + "px";
+    const facingAngle = Math.atan2(unit.directionY, unit.directionX) * 180 / Math.PI + 90;
+    effect.style.setProperty("--guard-angle", facingAngle + "deg");
+    arena.appendChild(effect);
+    window.setTimeout(() => effect.remove(), 760);
+  }
+
   function checkProjectileEnemyCollision(time) {
     if (gameState !== "playing" || !projectile.active) return;
     for (const unit of enemyUnits) {
@@ -1576,8 +1582,11 @@
           if (unit.disguiseElement) unit.disguiseElement.hidden = true;
           explodeEnemy(unit, time);
         } else if (unit.type.guardsFront && frontDot > 0) {
+          unit.element.classList.remove("is-guarding");
+          void unit.element.offsetWidth;
           unit.element.classList.add("is-guarding");
-          window.setTimeout(() => unit.element.classList.remove("is-guarding"), 240);
+          showKnightGuardEffect(unit);
+          window.setTimeout(() => unit.element.classList.remove("is-guarding"), 480);
         } else {
           explodeEnemy(unit, time);
         }
