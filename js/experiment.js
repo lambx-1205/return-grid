@@ -535,34 +535,9 @@
     const { cellWidth, cellHeight, playerCell } = updateContext;
     const dashHasLine = unit.typeKey === "dash" && playerCell && isDashLineClear(unit, playerCell);
     if (unit.typeKey === "dash") {
+      // DASH can re-arm only after its line of sight has been broken.
       if (!dashHasLine && unit.dashPhase === "patrol") unit.dashArmed = true;
-      if (unit.dashPhase === "patrol" && dashHasLine && unit.dashArmed) {
-        unit.dashTargetRow = playerCell.row;
-        unit.dashTargetCol = playerCell.col;
-        if (playerCell.col !== unit.col) {
-          unit.directionX = Math.sign(playerCell.col - unit.col);
-          unit.directionY = 0;
-        } else if (playerCell.row !== unit.row) {
-          unit.directionX = 0;
-          unit.directionY = Math.sign(playerCell.row - unit.row);
-        }
-        unit.dashPhase = "windup";
-        unit.dashPhaseEndsAt = time + DASH_WINDUP_MS;
-        unit.dashArmed = false;
-        unit.element.classList.add("is-winding-up");
-      }
       if (unit.dashPhase === "windup" && time >= unit.dashPhaseEndsAt) {
-        if (playerCell && isDashLineClear(unit, playerCell)) {
-          unit.dashTargetRow = playerCell.row;
-          unit.dashTargetCol = playerCell.col;
-          if (playerCell.col !== unit.col) {
-            unit.directionX = Math.sign(playerCell.col - unit.col);
-            unit.directionY = 0;
-          } else if (playerCell.row !== unit.row) {
-            unit.directionX = 0;
-            unit.directionY = Math.sign(playerCell.row - unit.row);
-          }
-        }
         unit.dashPhase = "charging";
         unit.element.classList.remove("is-winding-up");
         unit.element.classList.add("is-charging");
@@ -627,15 +602,46 @@
       const centerX = (unit.col + 0.5) * cellWidth;
       const centerY = (unit.row + 0.5) * cellHeight;
       const atCellCenter = Math.abs(unit.x - centerX) < 0.01 && Math.abs(unit.y - centerY) < 0.01;
-      if (atCellCenter && unit.typeKey === "dash" && unit.dashPhase === "charging") {
-        if (unit.row === unit.dashTargetRow && unit.col === unit.dashTargetCol) {
+      if (atCellCenter && unit.typeKey === "dash" && unit.dashPhase === "patrol") {
+        // Sense the player only at a tile center, so a charge always starts aligned to the grid.
+        const dashPlayerCell = playerCell;
+        if (unit.dashArmed && dashPlayerCell && isDashLineClear(unit, dashPlayerCell)) {
+          if (dashPlayerCell.row === unit.row && dashPlayerCell.col === unit.col) {
+            const towardX = x - unit.x;
+            const towardY = y - unit.y;
+            if (Math.abs(towardX) >= Math.abs(towardY) && Math.abs(towardX) > 0.01) {
+              unit.directionX = Math.sign(towardX);
+              unit.directionY = 0;
+            } else if (Math.abs(towardY) > 0.01) {
+              unit.directionX = 0;
+              unit.directionY = Math.sign(towardY);
+            }
+          } else if (dashPlayerCell.row === unit.row) {
+            unit.directionX = Math.sign(dashPlayerCell.col - unit.col);
+            unit.directionY = 0;
+          } else {
+            unit.directionX = 0;
+            unit.directionY = Math.sign(dashPlayerCell.row - unit.row);
+          }
+          unit.dashPhase = "windup";
+          unit.dashPhaseEndsAt = time + DASH_WINDUP_MS;
+          unit.dashArmed = false;
+          unit.element.classList.add("is-winding-up");
+          remaining = 0;
+          break;
+        }
+      } else if (atCellCenter && unit.typeKey === "dash" && unit.dashPhase === "charging") {
+        const nextChargeRow = unit.row + unit.directionY;
+        const nextChargeCol = unit.col + unit.directionX;
+        // The charge ends only when the next tile is blocked. It never turns mid-charge.
+        if (!canEnemyEnterCell(unit, nextChargeRow, nextChargeCol)) {
           unit.dashPhase = "patrol";
+          unit.dashArmed = false;
           unit.alerting = false;
           unit.element.classList.remove("is-charging");
           remaining = 0;
           break;
         }
-        // Keep the heading locked during the charge so DASH commits to its attack line.
       } else if (atCellCenter && unit.typeKey === "fade" && unit.fadeEscaping) {
         while (unit.fadeEscapeIndex < unit.fadeEscapePath.length) {
           const nextPathCell = unit.fadeEscapePath[unit.fadeEscapeIndex];
@@ -770,46 +776,31 @@
 
   function findFadeEscapePath(unit, playerCell) {
     if (!playerCell) return [];
-    const startKey = cellKey(unit.row, unit.col);
-    const startPlayerDistance = Math.abs(playerCell.row - unit.row) + Math.abs(playerCell.col - unit.col);
-    const queue = [{ row: unit.row, col: unit.col, steps: 0 }];
-    const parent = new Map([[startKey, null]]);
-    const visitedCells = new Map([[startKey, queue[0]]]);
+    const startDistance = Math.abs(playerCell.row - unit.row) + Math.abs(playerCell.col - unit.col);
     const candidates = [];
 
-    for (let index = 0; index < queue.length; index += 1) {
-      const current = queue[index];
-      const currentKey = cellKey(current.row, current.col);
-      const playerDistance = Math.abs(playerCell.row - current.row) + Math.abs(playerCell.col - current.col);
-      if (current.steps > 0 && playerDistance > startPlayerDistance) {
-        candidates.push({ key: currentKey, playerDistance });
+    // Build only straight cardinal paths. Fade does not weave while phasing.
+    for (const direction of ENEMY_DIRECTIONS) {
+      const path = [];
+      let row = unit.row;
+      let col = unit.col;
+      for (let step = 0; step < FADE_ESCAPE_MAX_CELLS; step += 1) {
+        const nextRow = row + direction.y;
+        const nextCol = col + direction.x;
+        if (!canEnemyEnterCell(unit, nextRow, nextCol)) break;
+        row = nextRow;
+        col = nextCol;
+        path.push({ row, col });
       }
-      if (current.steps >= FADE_ESCAPE_MAX_CELLS) continue;
-
-      for (const direction of ENEMY_DIRECTIONS) {
-        const row = current.row + direction.y;
-        const col = current.col + direction.x;
-        const key = cellKey(row, col);
-        if (visitedCells.has(key) || !canEnemyEnterCell(unit, row, col)) continue;
-        const next = { row, col, steps: current.steps + 1 };
-        visitedCells.set(key, next);
-        parent.set(key, currentKey);
-        queue.push(next);
-      }
+      if (!path.length) continue;
+      const playerDistance = Math.abs(playerCell.row - row) + Math.abs(playerCell.col - col);
+      if (playerDistance > startDistance) candidates.push({ path, playerDistance });
     }
 
     if (!candidates.length) return [];
     const greatestDistance = Math.max(...candidates.map(candidate => candidate.playerDistance));
     const bestCandidates = candidates.filter(candidate => candidate.playerDistance === greatestDistance);
-    const destination = bestCandidates[Math.floor(Math.random() * bestCandidates.length)];
-    const path = [];
-    let cursor = destination.key;
-    while (cursor && cursor !== startKey) {
-      const cell = visitedCells.get(cursor);
-      path.push({ row: cell.row, col: cell.col });
-      cursor = parent.get(cursor);
-    }
-    return path.reverse();
+    return bestCandidates[Math.floor(Math.random() * bestCandidates.length)].path;
   }
 
   function teleportFade(unit, time = performance.now()) {
@@ -1502,6 +1493,7 @@
 
   function explodeEnemy(unit, time = performance.now()) {
     if (!unit.alive) return;
+    if (unit.typeKey === "fade" && unit.fadeEscaping) return;
     if (unit.typeKey === "chameleon" && unit.disguised) return;
     unit.hp -= 1;
     renderEnemyAppearance(unit);
@@ -1515,7 +1507,7 @@
   function checkProjectileEnemyCollision(time) {
     if (gameState !== "playing" || !projectile.active) return;
     for (const unit of enemyUnits) {
-      if (!unit.alive) continue;
+      if (!unit.alive || unit.typeKey === "fade" && unit.fadeEscaping) continue;
       const enemyRadius = unit.radius || ENEMY_BASE_SIZE / 2;
       const contactDistance = enemyRadius + PROJECTILE_SIZE / 2;
       if (Math.hypot(projectile.x - unit.x, projectile.y - unit.y) <= contactDistance) {
