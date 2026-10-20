@@ -1980,32 +1980,39 @@ h1 span {
   border-radius: 2px; background: linear-gradient(90deg,#4d071b 0%,#ff4e62 22%,#fff2ce 50%,#ff4e62 78%,#4d071b 100%);
   box-shadow: 0 0 5px #ffb0b4,0 0 13px rgba(255,31,74,.98);
 }
-.enemy-drone.is-guarding { box-shadow: 0 0 0 4px rgba(255,230,159,.92),0 0 24px rgba(255,190,91,.95); filter:brightness(1.85); }
-.enemy-drone.enemy-knight .knight-guard-effect {
-  display: none; position: absolute; z-index: 8; left: 50%; top: 50%;
-  width: 32px; height: 35px; pointer-events: none;
-  border: 2px solid #ffe6a0; border-radius: 8px 8px 13px 13px;
-  background: linear-gradient(135deg,rgba(255,255,226,.98) 0%,rgba(255,202,91,.88) 36%,rgba(255,84,97,.82) 72%,rgba(128,13,45,.8) 100%);
-  clip-path: polygon(10% 0,90% 0,100% 22%,82% 76%,50% 100%,18% 76%,0 22%);
-  box-shadow: 0 0 10px #ffe6a0,0 0 22px rgba(255,95,98,.95);
-  transform: translate(-50%,-50%) rotate(var(--enemy-facing-angle,0deg)) translateY(-31px) scale(.55);
+.enemy-drone.is-guarding {
+  outline: 3px solid rgba(255,226,143,.98);
+  outline-offset: 2px;
+  box-shadow: 0 0 18px rgba(255,190,91,.98) !important;
+  filter: brightness(1.85) !important;
+}
+.knight-guard-effect {
+  position: absolute; z-index: 18; left: 0; top: 0;
+  width: 46px; height: 50px; pointer-events: none;
   opacity: 0;
+  transform: translate(-50%,-50%) rotate(var(--guard-angle,0deg)) translateY(-34px) scale(.25);
+  transform-origin: 50% 50%;
+  animation: knight-shield-block 700ms cubic-bezier(.12,.8,.25,1) both;
 }
-.enemy-drone.enemy-knight.is-guarding .knight-guard-effect {
-  display: block; animation: knight-shield-block 260ms cubic-bezier(.12,.8,.25,1) both;
+.knight-guard-effect::before {
+  content: ""; position: absolute; inset: 1px 6px 2px;
+  border: 2px solid #fff2ba; border-radius: 9px 9px 14px 14px;
+  background: linear-gradient(135deg,rgba(255,255,231,.99) 0%,rgba(255,207,96,.97) 30%,rgba(255,94,111,.95) 68%,rgba(115,8,43,.96) 100%);
+  clip-path: polygon(8% 0,92% 0,100% 22%,82% 76%,50% 100%,18% 76%,0 22%);
+  box-shadow: 0 0 12px #ffe7a0,0 0 26px rgba(255,75,102,.98),inset 0 0 9px rgba(255,255,255,.82);
 }
-.enemy-drone.enemy-knight.is-guarding .knight-guard-effect::before,
-.enemy-drone.enemy-knight.is-guarding .knight-guard-effect::after {
-  content: ""; position: absolute; top: 50%; width: 10px; height: 3px;
-  background: #fffbe1; box-shadow: 0 0 8px #fffbe1;
+.knight-guard-effect::after {
+  content: ""; position: absolute; inset: -5px -3px -2px;
+  border: 2px solid rgba(255,245,194,.96); border-radius: 50%;
+  box-shadow: 0 0 10px rgba(255,225,145,.95),inset 0 0 12px rgba(255,87,102,.65);
+  transform: scale(.6);
 }
-.enemy-drone.enemy-knight.is-guarding .knight-guard-effect::before { left: -9px; transform: rotate(-28deg); }
-.enemy-drone.enemy-knight.is-guarding .knight-guard-effect::after { right: -9px; transform: rotate(28deg); }
 @keyframes knight-shield-block {
-  0% { opacity: 0; transform: translate(-50%,-50%) rotate(var(--enemy-facing-angle,0deg)) translateY(-25px) scale(.35); filter:brightness(1.8); }
-  32% { opacity: 1; transform: translate(-50%,-50%) rotate(var(--enemy-facing-angle,0deg)) translateY(-32px) scale(1.15); filter:brightness(2.1); }
-  72% { opacity: .98; transform: translate(-50%,-50%) rotate(var(--enemy-facing-angle,0deg)) translateY(-31px) scale(1); filter:brightness(1.35); }
-  100% { opacity: 0; transform: translate(-50%,-50%) rotate(var(--enemy-facing-angle,0deg)) translateY(-31px) scale(.92); filter:brightness(1); }
+  0% { opacity: 0; transform: translate(-50%,-50%) rotate(var(--guard-angle,0deg)) translateY(-23px) scale(.2); }
+  14% { opacity: 1; transform: translate(-50%,-50%) rotate(var(--guard-angle,0deg)) translateY(-38px) scale(1.12); }
+  36% { opacity: 1; transform: translate(-50%,-50%) rotate(var(--guard-angle,0deg)) translateY(-38px) scale(1); }
+  68% { opacity: .95; transform: translate(-50%,-50%) rotate(var(--guard-angle,0deg)) translateY(-35px) scale(1.02); }
+  100% { opacity: 0; transform: translate(-50%,-50%) rotate(var(--guard-angle,0deg)) translateY(-30px) scale(.9); }
 }
 .enemy-drone.enemy-fade:not(.is-exploding)::after { content:""; position:absolute; inset:-5px; border:1px dotted rgba(203,187,255,.9); border-radius:50%; }
 .enemy-drone.enemy-zigzag .drone-ring { transform: rotate(65deg); }
