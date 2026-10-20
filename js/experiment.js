@@ -34,8 +34,6 @@
     dash: { value: document.querySelector("#enemy-dash-count-value"), decrease: document.querySelector("#enemy-dash-count-decrease"), increase: document.querySelector("#enemy-dash-count-increase") },
     zigzag: { value: document.querySelector("#enemy-zigzag-count-value"), decrease: document.querySelector("#enemy-zigzag-count-decrease"), increase: document.querySelector("#enemy-zigzag-count-increase") },
     fade: { value: document.querySelector("#enemy-fade-count-value"), decrease: document.querySelector("#enemy-fade-count-decrease"), increase: document.querySelector("#enemy-fade-count-increase") },
-    devil: { value: document.querySelector("#enemy-devil-count-value"), decrease: document.querySelector("#enemy-devil-count-decrease"), increase: document.querySelector("#enemy-devil-count-increase") },
-    soul: { value: document.querySelector("#enemy-soul-count-value"), decrease: document.querySelector("#enemy-soul-count-decrease"), increase: document.querySelector("#enemy-soul-count-increase") },
     fox: { value: document.querySelector("#enemy-fox-count-value"), decrease: document.querySelector("#enemy-fox-count-decrease"), increase: document.querySelector("#enemy-fox-count-increase") },
     acidfox: { value: document.querySelector("#enemy-acidfox-count-value"), decrease: document.querySelector("#enemy-acidfox-count-decrease"), increase: document.querySelector("#enemy-acidfox-count-increase") },
     chameleon: { value: document.querySelector("#enemy-chameleon-count-value"), decrease: document.querySelector("#enemy-chameleon-count-decrease"), increase: document.querySelector("#enemy-chameleon-count-increase") }
@@ -75,22 +73,20 @@
     battery: { hp: 2, points: 400, speed: 0, behavior: "battery" },
     photon: { hp: 3, points: 500, speed: 3.5, turnChance: 0.25 },
     reaper: { hp: 5, points: 1000, speed: 0.9, turnChance: 0.50, behavior: "reaper" },
-    dash: { hp: 2, points: 500, speed: 1, turnChance: 0.30, behavior: "dash", alertSpeed: 2.5 },
-    zigzag: { hp: 1, points: 400, speed: 2.65, turnChance: 0.50, behavior: "zigzag", ignoresSoftBlocks: true },
-    fade: { hp: 4, points: 1200, speed: 1.35, turnChance: 0.35, behavior: "fade" },
-    devil: { hp: Infinity, points: 2500, speed: 0.7, behavior: "devil", ignoresSoftBlocks: true, angerSpeed: 3 },
-    soul: { hp: 2, points: 100, speed: 1.2, turnChance: 0.34, behavior: "soul", ignoresSoftBlocks: true },
+    dash: { hp: 2, points: 250, speed: 1, turnChance: 0.45, behavior: "dash", alertSpeed: 2.5 },
+    zigzag: { hp: 1, points: 400, speed: 2.7, turnChance: 0.60, junctionTurnChance: 0.50, behavior: "zigzag", ignoresSoftBlocks: true },
+    fade: { hp: 4, points: 800, speed: 1.5, turnChance: 0.50, behavior: "fade" },
     fox: { hp: 3, points: 1600, speed: 1.3, turnChance: 0.60, behavior: "fox", guardsFront: true },
     acidfox: { hp: 5, points: 6400, speed: 1.5, turnChance: 0.90, behavior: "acidfox", guardsFront: true, poisonAttack: true },
     chameleon: { hp: 2, points: 800, speed: 1, turnChance: 0.30, behavior: "chameleon" }
   };
-  const configuredEnemyCounts = { drone: 3, tank: 0, scout: 0, hunter: 0, battery: 0, photon: 0, reaper: 0, dash: 0, zigzag: 0, fade: 0, devil: 0, soul: 0, fox: 0, acidfox: 0, chameleon: 0 };
+  const configuredEnemyCounts = { drone: 3, tank: 0, scout: 0, hunter: 0, battery: 0, photon: 0, reaper: 0, dash: 0, zigzag: 0, fade: 0, fox: 0, acidfox: 0, chameleon: 0 };
   const MAX_TOTAL_ENEMIES = 20;
   const ENEMY_COUNT_LIMITS = {
     drone: { min: 0, max: 8 }, tank: { min: 0, max: 8 }, scout: { min: 0, max: 8 },
     hunter: { min: 0, max: 8 }, battery: { min: 0, max: 8 }, photon: { min: 0, max: 8 },
     reaper: { min: 0, max: 8 }, dash: { min: 0, max: 8 }, zigzag: { min: 0, max: 8 }, fade: { min: 0, max: 8 },
-    devil: { min: 0, max: 3 }, soul: { min: 0, max: 8 }, fox: { min: 0, max: 8 }, acidfox: { min: 0, max: 8 }, chameleon: { min: 0, max: 8 }
+    fox: { min: 0, max: 8 }, acidfox: { min: 0, max: 8 }, chameleon: { min: 0, max: 8 }
   };
   let gameStarted = false;
   const enemyUnits = [];
@@ -114,6 +110,7 @@
   let facingX = 0;
   let facingY = -1;
   let previousTime = 0;
+  let nextFrameAt = 0;
   const INITIAL_LIVES = 5;
   const RESPAWN_DELAY_MS = 3000;
   const RESPAWN_INVINCIBILITY_MS = 3000;
@@ -138,6 +135,10 @@
   const ACID_POISON_PROJECTILE_SPEED = ENEMY_SPEED * ACID_POISON_PROJECTILE_SPEED_VALUE;
   const BATTERY_PROJECTILE_SPEED = ENEMY_SPEED * BATTERY_PROJECTILE_SPEED_VALUE;
   const REAPER_DIRECT_AIM_DISTANCE_CELLS = 5;
+  const DASH_WINDUP_MS = 750;
+  const FADE_ESCAPE_SPEED = 6;
+  const FADE_ESCAPE_MAX_CELLS = 5;
+  const TARGET_FRAME_INTERVAL_MS = 1000 / 60;
 
   function getInitialActionAt(typeKey, now) {
     if (typeKey === "battery") return now + BATTERY_FIRE_INTERVAL_MS - BATTERY_WARNING_DURATION_MS;
@@ -146,7 +147,6 @@
     return now + 1800 + Math.random() * 1800;
   }
 
-  let soulCountAtStart = 0;
   const projectile = {
     active: false,
     mode: "outbound",
@@ -227,7 +227,7 @@
         element.classList.remove(
           "enemy-tank", "enemy-scout", "enemy-hunter", "enemy-battery", "enemy-photon",
           "enemy-reaper", "enemy-dash", "enemy-zigzag", "enemy-fade",
-          "enemy-devil", "enemy-soul", "enemy-fox", "enemy-acidfox", "enemy-chameleon",
+          "enemy-fox", "enemy-acidfox", "enemy-chameleon",
           "is-exploding", "is-angry", "is-guarding", "is-disguised", "is-chasing", "is-charging", "is-recovering", "tank-hp-3", "tank-hp-2", "tank-hp-1"
         );
         element.classList.toggle("enemy-drone-unit", typeKey === "drone" || typeKey === "scout" || typeKey === "photon");
@@ -242,6 +242,14 @@
           directionX: unitIndex % 2 === 0 ? 1 : -1, directionY: 0,
           points: type.points, speed: type.speed,
           nextShotAt: getInitialActionAt(typeKey, performance.now()),
+          dashPhase: "patrol",
+          dashPhaseEndsAt: 0,
+          dashTargetRow: 0,
+          dashTargetCol: 0,
+          dashArmed: true,
+          fadeEscaping: false,
+          fadeEscapePath: [],
+          fadeEscapeIndex: 0,
           reaperPhase: "moving",
           reaperPhaseEndsAt: 0,
           batteryCharging: false,
@@ -329,13 +337,20 @@
       unit.alive = true;
       unit.hp = unit.type.hp;
       unit.speed = unit.type.speed;
-      unit.angry = false;
       unit.disguised = false;
       unit.disguisedUntil = 0;
       unit.nextDisguiseAt = performance.now() + 15000;
       unit.chasing = false;
       unit.element.classList.remove("is-angry", "is-guarding", "is-disguised", "is-chasing", "is-charging", "is-recovering");
       unit.nextShotAt = getInitialActionAt(unit.typeKey, performance.now());
+      unit.dashPhase = "patrol";
+      unit.dashPhaseEndsAt = 0;
+      unit.dashTargetRow = unit.row;
+      unit.dashTargetCol = unit.col;
+      unit.dashArmed = true;
+      unit.fadeEscaping = false;
+      unit.fadeEscapePath = [];
+      unit.fadeEscapeIndex = 0;
       unit.reaperPhase = "moving";
       unit.reaperPhaseEndsAt = 0;
       unit.batteryCharging = false;
@@ -366,8 +381,14 @@
   }
 
   function renderEnemy(unit) {
-    unit.element.style.left = `${unit.x}px`;
-    unit.element.style.top = `${unit.y}px`;
+    if (unit.lastRenderedX !== unit.x) {
+      unit.lastRenderedX = unit.x;
+      unit.element.style.left = `${unit.x}px`;
+    }
+    if (unit.lastRenderedY !== unit.y) {
+      unit.lastRenderedY = unit.y;
+      unit.element.style.top = `${unit.y}px`;
+    }
     const angle = Math.atan2(unit.directionY, unit.directionX) * 180 / Math.PI + 90;
     if (unit.lastFacingAngle !== angle) {
       unit.lastFacingAngle = angle;
@@ -446,7 +467,7 @@
 
   function chooseStrategicDirection(unit, cellWidth, cellHeight) {
     const behavior = unit.type.behavior;
-    if (!["chase", "flee", "devil", "fox", "acidfox"].includes(behavior)) return null;
+    if (!["chase", "flee", "fox", "acidfox"].includes(behavior)) return null;
     const playerCell = getPlayerGridCell(cellWidth, cellHeight);
     if (!playerCell) return null;
     const distances = getReachableCellDistances(playerCell.row, playerCell.col, unit);
@@ -568,14 +589,31 @@
       const centerX = (unit.col + 0.5) * cellWidth;
       const centerY = (unit.row + 0.5) * cellHeight;
       const atCellCenter = Math.abs(unit.x - centerX) < 0.01 && Math.abs(unit.y - centerY) < 0.01;
-      if (atCellCenter && playerCell && unit.typeKey === "devil" && unit.angry) {
-        const dx = playerCell.col - unit.col;
-        const dy = playerCell.row - unit.row;
-        if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) { unit.directionX = Math.sign(dx); unit.directionY = 0; }
-        else if (dy !== 0) { unit.directionX = 0; unit.directionY = Math.sign(dy); }
-      } else if (atCellCenter && unit.typeKey === "dash" && unit.alerting && playerCell) {
-        if (unit.row === playerCell.row && unit.col !== playerCell.col) { unit.directionX = Math.sign(playerCell.col - unit.col); unit.directionY = 0; }
-        else if (unit.col === playerCell.col && unit.row !== playerCell.row) { unit.directionX = 0; unit.directionY = Math.sign(playerCell.row - unit.row); }
+      if (atCellCenter && unit.typeKey === "dash" && unit.dashPhase === "charging") {
+        if (unit.row === unit.dashTargetRow && unit.col === unit.dashTargetCol) {
+          unit.dashPhase = "patrol";
+          unit.alerting = false;
+          unit.element.classList.remove("is-charging");
+          remaining = 0;
+          break;
+        }
+        // Keep the heading locked during the charge so DASH commits to its attack line.
+      } else if (atCellCenter && unit.typeKey === "fade" && unit.fadeEscaping) {
+        while (unit.fadeEscapeIndex < unit.fadeEscapePath.length) {
+          const nextPathCell = unit.fadeEscapePath[unit.fadeEscapeIndex];
+          if (nextPathCell.row !== unit.row || nextPathCell.col !== unit.col) break;
+          unit.fadeEscapeIndex += 1;
+        }
+        if (unit.fadeEscapeIndex >= unit.fadeEscapePath.length) {
+          unit.fadeEscaping = false;
+          unit.speed = unit.type.speed;
+          unit.element.classList.remove("is-phasing");
+          remaining = 0;
+          break;
+        }
+        const escapeCell = unit.fadeEscapePath[unit.fadeEscapeIndex];
+        unit.directionX = Math.sign(escapeCell.col - unit.col);
+        unit.directionY = Math.sign(escapeCell.row - unit.row);
       } else if (atCellCenter && (unit.type.behavior === "fox" || unit.type.behavior === "acidfox")) {
         if (Math.random() < unit.type.turnChance) {
           const strategicDirection = chooseStrategicDirection(unit, cellWidth, cellHeight);
@@ -583,7 +621,7 @@
         }
       } else if (atCellCenter && unit.type.behavior === "zigzag") {
         const exits = ENEMY_DIRECTIONS.filter(d => canEnemyEnterCell(unit, unit.row + d.y, unit.col + d.x));
-        if (exits.length >= 3 && Math.random() < unit.type.turnChance) {
+        if (exits.length >= 3 && Math.random() < (unit.type.junctionTurnChance ?? unit.type.turnChance)) {
           const options = exits.filter(d => d.x !== unit.directionX || d.y !== unit.directionY);
           if (options.length) { const chosen = options[Math.floor(Math.random() * options.length)]; unit.directionX = chosen.x; unit.directionY = chosen.y; }
         }
@@ -597,15 +635,19 @@
       let nextRow = unit.row + unit.directionY;
       let nextCol = unit.col + unit.directionX;
       if (!canEnemyEnterCell(unit, nextRow, nextCol)) {
-        if (unit.typeKey === "devil" && unit.angry) { shatterDevil(unit); break; }
+        if (unit.typeKey === "dash" && unit.dashPhase === "charging") {
+          chooseEnemyDirectionAtWall(unit);
+          unit.dashPhase = "patrol";
+          unit.alerting = false;
+          unit.element.classList.remove("is-charging");
+          remaining = 0;
+          break;
+        }
         chooseEnemyDirectionAtWall(unit);
         nextRow = unit.row + unit.directionY;
         nextCol = unit.col + unit.directionX;
       }
-      if (!canEnemyEnterCell(unit, nextRow, nextCol)) {
-        if (unit.typeKey === "devil" && unit.angry) shatterDevil(unit);
-        break;
-      }
+      if (!canEnemyEnterCell(unit, nextRow, nextCol)) break;
       const targetX = (nextCol + 0.5) * cellWidth;
       const targetY = (nextRow + 0.5) * cellHeight;
       const offsetX = targetX - unit.x;
@@ -875,7 +917,6 @@
     renderLives();
     resetProjectile();
     generateSoftBlocks();
-    soulCountAtStart = enemyUnits.filter(unit => unit.typeKey === "soul").length;
     placePlayerAtStart();
     placeEnemyAtStart();
   }
@@ -893,11 +934,6 @@
     for (const unit of enemyUnits) {
       if (!unit.alive) continue;
       if (Math.hypot(x - unit.x, y - unit.y) > playerHitRadius + (unit.radius || ENEMY_BASE_SIZE / 2)) continue;
-      if (unit.typeKey === "devil" && unit.angry) {
-        shatterDevil(unit);
-        if (time >= invincibleUntil) takePlayerHit(time);
-        return;
-      }
       if (time < invincibleUntil) continue;
       takePlayerHit(time);
       return;
@@ -1360,47 +1396,22 @@
     if (!unit.alive) return;
     unit.alive = false;
     unit.element.setAttribute("aria-hidden", "true");
-    unit.element.classList.remove("is-angry", "is-guarding");
+    unit.element.classList.remove("is-guarding", "is-charging", "is-winding-up", "is-phasing", "is-recovering");
     unit.element.classList.add("is-exploding");
     createEnemyExplosionEffect(unit);
     if (awardPoints) collectEnemyPoints(unit);
   }
 
-  function shatterDevil(unit) {
-    if (!unit.alive) return;
-    unit.angry = false;
-    defeatEnemy(unit, false);
-  }
-
-  function resolveDevilSoulRule() {
-    if (soulCountAtStart <= 0 || enemyUnits.some(unit => unit.typeKey === "soul" && unit.alive)) return;
-    for (const devil of enemyUnits) {
-      if (devil.typeKey === "devil" && devil.alive) defeatEnemy(devil, true);
-    }
-  }
-
-  function explodeEnemy(unit) {
+  function explodeEnemy(unit, time = performance.now()) {
     if (!unit.alive) return;
     if (unit.typeKey === "chameleon" && unit.disguised) return;
-    if (unit.typeKey === "devil") {
-      const hasSoulAlive = soulCountAtStart > 0 && enemyUnits.some(enemy => enemy.typeKey === "soul" && enemy.alive);
-      if (unit.angry || !hasSoulAlive) return;
-      unit.angry = true;
-      unit.element.classList.add("is-angry");
-      const playerCell = getPlayerGridCell(arena.clientWidth / GRID_COLUMNS, arena.clientHeight / GRID_ROWS);
-      if (playerCell) {
-        const dx = playerCell.col - unit.col, dy = playerCell.row - unit.row;
-        if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) { unit.directionX = Math.sign(dx); unit.directionY = 0; }
-        else if (dy !== 0) { unit.directionX = 0; unit.directionY = Math.sign(dy); }
-      }
-      return;
-    }
     unit.hp -= 1;
     renderEnemyAppearance(unit);
-    if (unit.hp > 0) { if (unit.typeKey === "fade") teleportFade(unit); return; }
-    const wasSoul = unit.typeKey === "soul";
+    if (unit.hp > 0) {
+      if (unit.typeKey === "fade") teleportFade(unit, time);
+      return;
+    }
     defeatEnemy(unit, true);
-    if (wasSoul) resolveDevilSoulRule();
   }
 
   function checkProjectileEnemyCollision(time) {
@@ -1544,7 +1555,7 @@
     controls.decrease.disabled = count <= limits.min;
     controls.increase.disabled = count >= limits.max || total >= MAX_TOTAL_ENEMIES;
     const totalLabel = document.querySelector("#enemy-total-count");
-    if (totalLabel) totalLabel.textContent = total + " / " + MAX_TOTAL_ENEMIES + " UNITS DEPLOYED";
+    if (totalLabel && totalLabel.textContent !== total + " / " + MAX_TOTAL_ENEMIES + " UNITS DEPLOYED") totalLabel.textContent = total + " / " + MAX_TOTAL_ENEMIES + " UNITS DEPLOYED";
   }
 
   function renderEnemyCountControls() {
@@ -1569,7 +1580,6 @@
     generateSoftBlocks();
     fitPlayerToGrid();
     createEnemyUnits();
-    soulCountAtStart = enemyUnits.filter(unit => unit.typeKey === "soul").length;
     fitEnemyToGrid();
     // Start in the upper-left walkable cell; enemy positions are randomized away from it.
     placePlayerAtStart();
