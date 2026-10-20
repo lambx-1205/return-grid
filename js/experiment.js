@@ -636,7 +636,7 @@
         // The charge ends only when the next tile is blocked. It never turns mid-charge.
         if (!canEnemyEnterCell(unit, nextChargeRow, nextChargeCol)) {
           unit.dashPhase = "patrol";
-          unit.dashArmed = false;
+          unit.dashArmed = true;
           unit.alerting = false;
           unit.element.classList.remove("is-charging");
           remaining = 0;
