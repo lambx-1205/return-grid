@@ -1018,7 +1018,8 @@
     if (gameState !== "playing") return;
     const playerHitRadius = Math.min(playerRadius.x, playerRadius.y) * 0.62;
     for (const unit of enemyUnits) {
-      if (!unit.alive) continue;
+      // While FADE is phasing, it neither damages the player nor takes hits.
+      if (!unit.alive || (unit.typeKey === "fade" && unit.fadeEscaping)) continue;
       if (Math.hypot(x - unit.x, y - unit.y) > playerHitRadius + (unit.radius || ENEMY_BASE_SIZE / 2)) continue;
       if (time < invincibleUntil) continue;
       takePlayerHit(time);
