@@ -270,6 +270,13 @@
           unit.disguiseElement = disguiseElement;
           element.appendChild(disguiseElement);
         }
+        if (typeKey === "knight") {
+          const guardEffect = document.createElement("span");
+          guardEffect.className = "knight-guard-effect";
+          guardEffect.setAttribute("aria-hidden", "true");
+          element.appendChild(guardEffect);
+          unit.guardEffect = guardEffect;
+        }
         renderEnemyAppearance(unit);
         element.addEventListener("animationend", event => {
           if ((event.animationName === "enemy-drone-explode" || event.animationName === "enemy-drone-unit-explode" || event.animationName === "enemy-tank-explode") && !unit.alive) element.hidden = true;
@@ -1541,7 +1548,6 @@
   function explodeEnemy(unit, time = performance.now()) {
     if (!unit.alive) return;
     if (unit.typeKey === "fade" && unit.fadeEscaping) return;
-    if (unit.typeKey === "chameleon" && unit.disguised) return;
     unit.hp -= 1;
     renderEnemyAppearance(unit);
     if (unit.hp > 0) {
@@ -1562,7 +1568,13 @@
         renderProjectile();
         const frontDot = unit.directionX * (projectile.x - unit.x) + unit.directionY * (projectile.y - unit.y);
         if (unit.typeKey === "chameleon" && unit.disguised) {
-          // A disguised chameleon absorbs the attack without losing HP.
+          // A hit breaks the disguise and restarts the 20-second normal phase.
+          unit.disguised = false;
+          unit.disguisedUntil = 0;
+          unit.nextDisguiseAt = time + 20000;
+          unit.element.classList.remove("is-disguised");
+          if (unit.disguiseElement) unit.disguiseElement.hidden = true;
+          explodeEnemy(unit, time);
         } else if (unit.type.guardsFront && frontDot > 0) {
           unit.element.classList.add("is-guarding");
           window.setTimeout(() => unit.element.classList.remove("is-guarding"), 240);
