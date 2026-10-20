@@ -681,7 +681,8 @@
       }
       let nextRow = unit.row + unit.directionY;
       let nextCol = unit.col + unit.directionX;
-      if (!canEnemyEnterCell(unit, nextRow, nextCol)) {
+      // FADE phases through both hard and soft blocks; all other enemies obey collision rules.
+      if (!unit.fadeEscaping && !canEnemyEnterCell(unit, nextRow, nextCol)) {
         if (unit.typeKey === "dash" && unit.dashPhase === "charging") {
           chooseEnemyDirectionAtWall(unit);
           unit.dashPhase = "patrol";
@@ -694,7 +695,9 @@
         nextRow = unit.row + unit.directionY;
         nextCol = unit.col + unit.directionX;
       }
-      if (!canEnemyEnterCell(unit, nextRow, nextCol)) break;
+      if (unit.fadeEscaping
+        ? nextRow < 0 || nextRow >= GRID_ROWS || nextCol < 0 || nextCol >= GRID_COLUMNS
+        : !canEnemyEnterCell(unit, nextRow, nextCol)) break;
       const targetX = (nextCol + 0.5) * cellWidth;
       const targetY = (nextRow + 0.5) * cellHeight;
       const offsetX = targetX - unit.x;
@@ -787,7 +790,8 @@
       for (let step = 0; step < FADE_ESCAPE_MAX_CELLS; step += 1) {
         const nextRow = row + direction.y;
         const nextCol = col + direction.x;
-        if (!canEnemyEnterCell(unit, nextRow, nextCol)) break;
+        // Phase paths ignore hard and soft blocks, but remain inside the arena.
+        if (nextRow < 0 || nextRow >= GRID_ROWS || nextCol < 0 || nextCol >= GRID_COLUMNS) break;
         row = nextRow;
         col = nextCol;
         path.push({ row, col });
