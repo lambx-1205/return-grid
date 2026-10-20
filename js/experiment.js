@@ -228,7 +228,7 @@
           "enemy-tank", "enemy-scout", "enemy-hunter", "enemy-battery", "enemy-photon",
           "enemy-reaper", "enemy-dash", "enemy-zigzag", "enemy-fade",
           "enemy-fox", "enemy-acidfox", "enemy-chameleon",
-          "is-exploding", "is-angry", "is-guarding", "is-disguised", "is-chasing", "is-charging", "is-recovering", "tank-hp-3", "tank-hp-2", "tank-hp-1"
+          "is-exploding", "is-guarding", "is-disguised", "is-chasing", "is-charging", "is-winding-up", "is-phasing", "is-recovering", "tank-hp-3", "tank-hp-2", "tank-hp-1"
         );
         element.classList.toggle("enemy-drone-unit", typeKey === "drone" || typeKey === "scout" || typeKey === "photon");
         if (typeKey !== "drone") element.classList.add("enemy-" + typeKey);
@@ -256,7 +256,6 @@
           batteryFireAt: 0,
           alerting: false,
           chasing: false,
-          angry: false,
           nextDisguiseAt: performance.now() + 15000,
           disguisedUntil: 0,
           disguised: false
@@ -341,7 +340,7 @@
       unit.disguisedUntil = 0;
       unit.nextDisguiseAt = performance.now() + 15000;
       unit.chasing = false;
-      unit.element.classList.remove("is-angry", "is-guarding", "is-disguised", "is-chasing", "is-charging", "is-recovering");
+      unit.element.classList.remove("is-guarding", "is-disguised", "is-chasing", "is-charging", "is-winding-up", "is-phasing", "is-recovering");
       unit.nextShotAt = getInitialActionAt(unit.typeKey, performance.now());
       unit.dashPhase = "patrol";
       unit.dashPhaseEndsAt = 0;
@@ -536,7 +535,7 @@
     const { cellWidth, cellHeight, playerCell } = updateContext;
     const dashHasLine = unit.typeKey === "dash" && playerCell && isDashLineClear(unit, playerCell);
     if (unit.typeKey === "dash") {
-      if (!dashHasLine) unit.dashArmed = true;
+      if (!dashHasLine && unit.dashPhase === "patrol") unit.dashArmed = true;
       if (unit.dashPhase === "patrol" && dashHasLine && unit.dashArmed) {
         unit.dashTargetRow = playerCell.row;
         unit.dashTargetCol = playerCell.col;
@@ -645,12 +644,15 @@
         }
         if (unit.fadeEscapeIndex >= unit.fadeEscapePath.length) {
           unit.fadeEscaping = false;
+          unit.fadeEscapePath = [];
+          unit.fadeEscapeIndex = 0;
           unit.speed = unit.type.speed;
           unit.element.classList.remove("is-phasing");
           remaining = 0;
           break;
         }
         const escapeCell = unit.fadeEscapePath[unit.fadeEscapeIndex];
+        leaveFadeTrail(unit);
         unit.directionX = Math.sign(escapeCell.col - unit.col);
         unit.directionY = Math.sign(escapeCell.row - unit.row);
       } else if (atCellCenter && (unit.type.behavior === "fox" || unit.type.behavior === "acidfox")) {
@@ -1490,6 +1492,9 @@
     unit.alive = false;
     unit.element.setAttribute("aria-hidden", "true");
     unit.element.classList.remove("is-guarding", "is-charging", "is-winding-up", "is-phasing", "is-recovering");
+    unit.fadeEscaping = false;
+    unit.fadeEscapePath = [];
+    unit.fadeEscapeIndex = 0;
     unit.element.classList.add("is-exploding");
     createEnemyExplosionEffect(unit);
     if (awardPoints) collectEnemyPoints(unit);
@@ -1523,7 +1528,7 @@
           unit.element.classList.add("is-guarding");
           window.setTimeout(() => unit.element.classList.remove("is-guarding"), 240);
         } else {
-          explodeEnemy(unit);
+          explodeEnemy(unit, time);
         }
         startAttackCooldown(time);
         return;
@@ -1561,6 +1566,9 @@
   }
 
   function frame(time) {
+    window.requestAnimationFrame(frame);
+    if (time < nextFrameAt) return;
+    nextFrameAt = time + TARGET_FRAME_INTERVAL_MS;
     if (!previousTime) previousTime = time;
     const delta = Math.min((time - previousTime) / 1000, 0.05);
     previousTime = time;
@@ -1574,7 +1582,6 @@
         for (const unit of enemyUnits) updateEnemy(unit, delta, time, enemyContext);
         updateRespawnCountdown(time);
       }
-      window.requestAnimationFrame(frame);
       return;
     }
 
@@ -1636,7 +1643,6 @@
     checkProjectileEnemyCollision(time);
     handlePlayerEnemyCollision(time);
     renderPlayer();
-    window.requestAnimationFrame(frame);
   }
 
   function renderEnemyCountControl(typeKey) {
