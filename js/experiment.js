@@ -534,14 +534,53 @@
     updateChameleonState(unit, time);
     const updateContext = context || createEnemyUpdateContext();
     const { cellWidth, cellHeight, playerCell } = updateContext;
-    unit.alerting = unit.type.behavior === "dash" && playerCell && isDashLineClear(unit, playerCell);
+    const dashHasLine = unit.typeKey === "dash" && playerCell && isDashLineClear(unit, playerCell);
+    if (unit.typeKey === "dash") {
+      if (!dashHasLine) unit.dashArmed = true;
+      if (unit.dashPhase === "patrol" && dashHasLine && unit.dashArmed) {
+        unit.dashTargetRow = playerCell.row;
+        unit.dashTargetCol = playerCell.col;
+        if (playerCell.col !== unit.col) {
+          unit.directionX = Math.sign(playerCell.col - unit.col);
+          unit.directionY = 0;
+        } else if (playerCell.row !== unit.row) {
+          unit.directionX = 0;
+          unit.directionY = Math.sign(playerCell.row - unit.row);
+        }
+        unit.dashPhase = "windup";
+        unit.dashPhaseEndsAt = time + DASH_WINDUP_MS;
+        unit.dashArmed = false;
+        unit.element.classList.add("is-winding-up");
+      }
+      if (unit.dashPhase === "windup" && time >= unit.dashPhaseEndsAt) {
+        if (playerCell && isDashLineClear(unit, playerCell)) {
+          unit.dashTargetRow = playerCell.row;
+          unit.dashTargetCol = playerCell.col;
+          if (playerCell.col !== unit.col) {
+            unit.directionX = Math.sign(playerCell.col - unit.col);
+            unit.directionY = 0;
+          } else if (playerCell.row !== unit.row) {
+            unit.directionX = 0;
+            unit.directionY = Math.sign(playerCell.row - unit.row);
+          }
+        }
+        unit.dashPhase = "charging";
+        unit.element.classList.remove("is-winding-up");
+        unit.element.classList.add("is-charging");
+      }
+      unit.alerting = unit.dashPhase === "charging";
+    } else {
+      unit.alerting = false;
+    }
     if (unit.typeKey === "hunter" && playerCell) {
       const playerDistance = Math.abs(playerCell.col - unit.col) + Math.abs(playerCell.row - unit.row);
       if (!unit.chasing && playerDistance <= unit.type.chaseRadius) unit.chasing = true;
       else if (unit.chasing && playerDistance > unit.type.disengageRadius) unit.chasing = false;
       unit.element.classList.toggle("is-chasing", unit.chasing);
     }
-    let remaining = ENEMY_SPEED * (unit.angry ? unit.type.angerSpeed : unit.alerting ? unit.type.alertSpeed : unit.speed) * delta;
+    let remaining = unit.typeKey === "dash" && unit.dashPhase === "windup"
+      ? 0
+      : ENEMY_SPEED * (unit.fadeEscaping ? FADE_ESCAPE_SPEED : unit.alerting ? unit.type.alertSpeed : unit.speed) * delta;
     if (unit.typeKey === "reaper") {
       if (unit.reaperPhase === "moving" && time >= unit.nextShotAt) {
         unit.reaperPhase = "charging";
@@ -711,26 +750,80 @@
   }
 
   function leaveFadeTrail(unit) {
-    const trail = unit.element.cloneNode(true);
-    trail.removeAttribute("id"); trail.classList.add("enemy-fade-trail"); trail.classList.remove("is-exploding");
-    trail.hidden = false; trail.setAttribute("aria-hidden", "true");
-    trail.style.left = unit.x + "px"; trail.style.top = unit.y + "px"; arena.appendChild(trail);
-    window.setTimeout(() => trail.remove(), 650);
+    // A lightweight silhouette is cheaper than cloning the enemy's whole animated DOM.
+    const trail = document.createElement("div");
+    trail.className = "enemy-drone enemy-fade enemy-fade-trail";
+    trail.setAttribute("aria-hidden", "true");
+    for (const className of ["drone-ring", "drone-eye", "drone-light drone-light-left", "drone-light drone-light-right"]) {
+      const detail = document.createElement("span");
+      detail.className = className;
+      detail.setAttribute("aria-hidden", "true");
+      trail.appendChild(detail);
+    }
+    trail.style.left = unit.x + "px";
+    trail.style.top = unit.y + "px";
+    arena.appendChild(trail);
+    window.setTimeout(() => trail.remove(), 420);
   }
 
-  function teleportFade(unit) {
-    const options = [], cw = arena.clientWidth / GRID_COLUMNS, ch = arena.clientHeight / GRID_ROWS;
-    for (let row = 1; row < GRID_ROWS - 1; row++) for (let col = 1; col < GRID_COLUMNS - 1; col++) {
-      const md = Math.abs(row - unit.row) + Math.abs(col - unit.col);
-      if (md < 2 || md > 6 || !isWalkableCell(row, col)) continue;
-      if (Math.hypot((col + .5) * cw - x, (row + .5) * ch - y) < cw * 1.1) continue;
-      options.push({row, col});
+  function findFadeEscapePath(unit, playerCell) {
+    if (!playerCell) return [];
+    const startKey = cellKey(unit.row, unit.col);
+    const startPlayerDistance = Math.abs(playerCell.row - unit.row) + Math.abs(playerCell.col - unit.col);
+    const queue = [{ row: unit.row, col: unit.col, steps: 0 }];
+    const parent = new Map([[startKey, null]]);
+    const visitedCells = new Map([[startKey, queue[0]]]);
+    const candidates = [];
+
+    for (let index = 0; index < queue.length; index += 1) {
+      const current = queue[index];
+      const currentKey = cellKey(current.row, current.col);
+      const playerDistance = Math.abs(playerCell.row - current.row) + Math.abs(playerCell.col - current.col);
+      if (current.steps > 0 && playerDistance > startPlayerDistance) {
+        candidates.push({ key: currentKey, playerDistance });
+      }
+      if (current.steps >= FADE_ESCAPE_MAX_CELLS) continue;
+
+      for (const direction of ENEMY_DIRECTIONS) {
+        const row = current.row + direction.y;
+        const col = current.col + direction.x;
+        const key = cellKey(row, col);
+        if (visitedCells.has(key) || !canEnemyEnterCell(unit, row, col)) continue;
+        const next = { row, col, steps: current.steps + 1 };
+        visitedCells.set(key, next);
+        parent.set(key, currentKey);
+        queue.push(next);
+      }
     }
-    if (!options.length) return;
+
+    if (!candidates.length) return [];
+    const greatestDistance = Math.max(...candidates.map(candidate => candidate.playerDistance));
+    const bestCandidates = candidates.filter(candidate => candidate.playerDistance === greatestDistance);
+    const destination = bestCandidates[Math.floor(Math.random() * bestCandidates.length)];
+    const path = [];
+    let cursor = destination.key;
+    while (cursor && cursor !== startKey) {
+      const cell = visitedCells.get(cursor);
+      path.push({ row: cell.row, col: cell.col });
+      cursor = parent.get(cursor);
+    }
+    return path.reverse();
+  }
+
+  function teleportFade(unit, time = performance.now()) {
+    const playerCell = getPlayerGridCell(arena.clientWidth / GRID_COLUMNS, arena.clientHeight / GRID_ROWS);
+    if (!playerCell) return;
+    const distanceToPlayer = Math.abs(playerCell.row - unit.row) + Math.abs(playerCell.col - unit.col);
+    if (distanceToPlayer > FADE_ESCAPE_MAX_CELLS) return;
+
+    const path = findFadeEscapePath(unit, playerCell);
+    if (!path.length) return;
     leaveFadeTrail(unit);
-    const cell = options[Math.floor(Math.random() * options.length)];
-    unit.row = cell.row; unit.col = cell.col; unit.x = (cell.col + .5) * cw; unit.y = (cell.row + .5) * ch;
-    renderEnemy(unit);
+    unit.fadeEscapePath = path;
+    unit.fadeEscapeIndex = 0;
+    unit.fadeEscaping = true;
+    unit.speed = FADE_ESCAPE_SPEED;
+    unit.element.classList.add("is-phasing");
   }
 
   function createEnemyProjectileElement(extraClass = "", initialX = 0, initialY = 0) {
